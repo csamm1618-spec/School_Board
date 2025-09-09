@@ -12,6 +12,8 @@ export const AuthPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
   const [error, setError] = useState('');
+  const [emailSent, setEmailSent] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
 
   if (loading) {
     return (
@@ -42,8 +44,39 @@ export const AuthPage = () => {
           email,
           password,
         });
-        if (error) throw error;
+        if (error) {
+          throw error;
+        } else {
+          // Sign up successful, show email confirmation message
+          setEmailSent(true);
+          setUserEmail(email);
+        }
       }
+    } catch (error: any) {
+      setError(error.message);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleBackToLogin = () => {
+    setEmailSent(false);
+    setIsLogin(true);
+    setEmail('');
+    setPassword('');
+    setError('');
+    setUserEmail('');
+  };
+
+  const resendConfirmationEmail = async () => {
+    try {
+      setAuthLoading(true);
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: userEmail,
+      });
+      if (error) throw error;
+      alert('Confirmation email resent successfully!');
     } catch (error: any) {
       setError(error.message);
     } finally {
@@ -67,78 +100,127 @@ export const AuthPage = () => {
         </div>
 
         <div className="bg-white rounded-lg shadow-lg p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-                {error}
+          {emailSent ? (
+            /* Email Confirmation Message */
+            <div className="text-center space-y-6">
+              <div className="bg-green-100 p-4 rounded-full w-16 h-16 mx-auto">
+                <Mail className="h-8 w-8 text-green-600 mx-auto" />
               </div>
-            )}
-
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
-              </label>
-              <div className="mt-1 relative">
-                <input
-                  id="email"
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter your email"
-                />
-                <Mail className="h-5 w-5 text-gray-400 absolute left-3 top-2.5" />
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  Check Your Email
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  We've sent a confirmation email to <strong>{userEmail}</strong>
+                </p>
+                <p className="text-sm text-gray-500 mb-6">
+                  Please check your inbox and click the confirmation link to activate your account. 
+                  Don't forget to check your spam folder if you don't see the email.
+                </p>
               </div>
-            </div>
+              
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                  {error}
+                </div>
+              )}
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <div className="mt-1 relative">
-                <input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 pl-10 pr-10 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter your password"
-                />
-                <Lock className="h-5 w-5 text-gray-400 absolute left-3 top-2.5" />
+              <div className="space-y-3">
                 <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                  onClick={resendConfirmationEmail}
+                  disabled={authLoading}
+                  className="w-full flex justify-center py-2 px-4 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  {authLoading ? (
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                  ) : (
+                    'Resend Confirmation Email'
+                  )}
+                </button>
+                
+                <button
+                  onClick={handleBackToLogin}
+                  className="w-full py-2 px-4 text-gray-600 hover:text-gray-800 transition-colors"
+                >
+                  Back to Sign In
                 </button>
               </div>
             </div>
-
-            <button
-              type="submit"
-              disabled={authLoading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {authLoading ? (
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-              ) : (
-                isLogin ? 'Sign In' : 'Create Account'
+          ) : (
+            /* Login/Signup Form */
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                  {error}
+                </div>
               )}
-            </button>
 
-            <div className="text-center">
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                  Email address
+                </label>
+                <div className="mt-1 relative">
+                  <input
+                    id="email"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="appearance-none block w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter your email"
+                  />
+                  <Mail className="h-5 w-5 text-gray-400 absolute left-3 top-2.5" />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                  Password
+                </label>
+                <div className="mt-1 relative">
+                  <input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="appearance-none block w-full px-3 py-2 pl-10 pr-10 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter your password"
+                  />
+                  <Lock className="h-5 w-5 text-gray-400 absolute left-3 top-2.5" />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
+              </div>
+
               <button
-                type="button"
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-blue-600 hover:text-blue-700 font-medium"
+                type="submit"
+                disabled={authLoading}
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
+                {authLoading ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                ) : (
+                  isLogin ? 'Sign In' : 'Create Account'
+                )}
               </button>
-            </div>
-          </form>
+
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => setIsLogin(!isLogin)}
+                  className="text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       </div>
     </div>
