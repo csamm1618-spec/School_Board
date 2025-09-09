@@ -87,13 +87,25 @@ export const Navigation = () => {
             })}
           </div>
 
-          <button
-            onClick={signOut}
-            className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <LogOut className="h-4 w-4" />
-            <span className="text-sm font-medium">Logout</span>
-          </button>
+          <div className="flex space-x-3 items-center">
+  <button
+    onClick={signOut}
+    className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+  >
+    <LogOut className="h-4 w-4" />
+    <span className="text-sm font-medium">Logout</span>
+  </button>
+
+  <a
+    href="https://forms.gle/your-form-id" // replace with your real Google Form link
+    target="_blank"
+    rel="noopener noreferrer"
+    className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition-colors"
+  >
+    Give Feedback
+  </a>
+</div>
+
         </div>
       </div>
 
