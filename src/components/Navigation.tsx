@@ -33,12 +33,24 @@ export const Navigation = () => {
               <School className="h-8 w-8 text-blue-600" />
               <span className="text-xl font-bold text-blue-600">School Board</span>
             </Link>
-            <Link
-              to="/auth"
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Login
-            </Link>
+           <div className="flex space-x-3">
+  <Link
+    to="/auth"
+    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+  >
+    Login
+  </Link>
+
+  <a
+    href="https://forms.gle/your-form-id" // replace with your real Google Form link
+    target="_blank"
+    rel="noopener noreferrer"
+    className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition-colors"
+  >
+    Give Feedback
+  </a>
+</div>
+
           </div>
         </div>
       </nav>
