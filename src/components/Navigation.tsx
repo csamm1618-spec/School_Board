@@ -42,7 +42,7 @@ export const Navigation = () => {
   </Link>
 
   <a
-    href="https://forms.gle/your-form-id" // replace with your real Google Form link
+    href="https://forms.gle/H6zF6gHpwS1Dv53Z6" // replace with your real Google Form link
     target="_blank"
     rel="noopener noreferrer"
     className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition-colors"
@@ -97,7 +97,7 @@ export const Navigation = () => {
   </button>
 
   <a
-    href="https://forms.gle/your-form-id" // replace with your real Google Form link
+    href="https://forms.gle/H6zF6gHpwS1Dv53Z6" // replace with your real Google Form link
     target="_blank"
     rel="noopener noreferrer"
     className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition-colors"
