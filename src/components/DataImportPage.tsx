@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
+import { useAuth } from '../hooks/useAuth';
 import { 
   Upload, 
   Download, 
@@ -35,6 +36,7 @@ interface ImportResult {
 }
 
 export const DataImportPage = () => {
+  const { schoolId } = useAuth();
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<ImportResult[]>([]);
@@ -104,7 +106,7 @@ export const DataImportPage = () => {
   };
 
   const processImport = async () => {
-    if (!file) return;
+    if (!file || !schoolId) return;
 
     setLoading(true);
     const importResults: ImportResult[] = [];
@@ -159,7 +161,8 @@ export const DataImportPage = () => {
                 parent_name: row.parent_name.trim(),
                 phone_number: row.parent_phone_number.trim(),
                 email: row.parent_email?.trim() || null,
-                relationship: row.parent_relationship?.trim() || 'Parent'
+                relationship: row.parent_relationship?.trim() || 'Parent',
+                school_id: schoolId
               }])
               .select('id')
               .single();
@@ -186,7 +189,8 @@ export const DataImportPage = () => {
               .insert([{
                 student_name: row.student_name.trim(),
                 grade: row.student_grade.trim(),
-                date_of_birth: row.student_date_of_birth?.trim() || null
+            date_of_birth: row.student_date_of_birth?.trim() || null,
+            school_id: schoolId
               }])
               .select('id')
               .single();
@@ -209,7 +213,8 @@ export const DataImportPage = () => {
               .from('parent_student')
               .insert([{
                 parent_id: parentId,
-                student_id: studentId
+           student_id: studentId,
+           school_id: schoolId
               }]);
 
             if (relationError) throw relationError;

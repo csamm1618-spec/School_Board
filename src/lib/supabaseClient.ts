@@ -5,13 +5,29 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'YOUR_SUPABASE
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+export interface School {
+  id: string;
+  name: string;
+  created_at: string;
+}
+
+export interface UserProfile {
+  id: string;
+  user_id: string;
+  school_id: string;
+  created_at: string;
+  school?: School;
+}
+
 export interface Parent {
   id: string;
   parent_name: string;
   phone_number: string;
   email?: string;
   relationship: string;
+  school_id: string;
   created_at: string;
+  school?: School;
 }
 
 export interface Student {
@@ -19,17 +35,62 @@ export interface Student {
   student_name: string;
   grade: string;
   date_of_birth?: string;
+  school_id: string;
   created_at: string;
+  school?: School;
 }
 
 export interface ParentStudent {
   id: string;
   parent_id: string;
   student_id: string;
+  school_id: string;
   created_at: string;
   parent?: Parent;
   student?: Student;
+  school?: School;
 }
+
+// Helper function to get user's school info
+export const getUserSchoolInfo = async (userId: string) => {
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .select(`
+      *,
+      school:schools(*)
+    `)
+    .eq('user_id', userId)
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+// Helper function to create user profile for new signups
+export const createUserProfile = async (userId: string, schoolId: string) => {
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .insert([{
+      user_id: userId,
+      school_id: schoolId
+    }])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+// Helper function to get all schools
+export const getSchools = async () => {
+  const { data, error } = await supabase
+    .from('schools')
+    .select('*')
+    .order('name');
+
+  if (error) throw error;
+  return data;
+};
 
 export const sendWelcomeSMS = async (parentName: string, phoneNumber: string) => {
   try {

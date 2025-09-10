@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 
 export const Navigation = () => {
-  const { user, signOut } = useAuth();
+  const { user, schoolName, signOut } = useAuth();
   const location = useLocation();
 
   const navItems = [
@@ -65,7 +65,12 @@ export const Navigation = () => {
         <div className="flex justify-between items-center h-16">
           <Link to="/dashboard" className="flex items-center space-x-2">
             <School className="h-8 w-8 text-blue-600" />
-            <span className="text-xl font-bold text-blue-600">School Board</span>
+            <div className="flex flex-col">
+              <span className="text-xl font-bold text-blue-600">School Board</span>
+              {schoolName && (
+                <span className="text-xs text-gray-500">{schoolName}</span>
+              )}
+            </div>
           </Link>
           
           <div className="hidden md:flex space-x-1">

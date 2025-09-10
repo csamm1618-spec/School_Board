@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { supabase, Parent } from '../lib/supabaseClient';
+import { supabase } from '../lib/supabaseClient';
+import { useAuth } from '../hooks/useAuth';
 import { Search, Download, Users, Phone, Mail } from 'lucide-react';
 import Papa from 'papaparse';
 
 export const ParentsPage = () => {
+  const { schoolId } = useAuth();
   const [parents, setParents] = useState<any[]>([]);
   const [filteredParents, setFilteredParents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -18,15 +20,19 @@ export const ParentsPage = () => {
   }, [searchTerm, parents]);
 
   const loadParents = async () => {
+    if (!schoolId) return;
+    
     try {
       const { data, error } = await supabase
         .from('parents')
         .select(`
           *,
+          school:schools(name),
           parent_student(
-            student:students(*)
+            student:students(*, school:schools(name))
           )
         `)
+        .eq('school_id', schoolId)
         .order('parent_name');
 
       if (error) throw error;

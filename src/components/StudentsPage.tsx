@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { useAuth } from '../hooks/useAuth';
 import { Search, Download, GraduationCap, Calendar, Users } from 'lucide-react';
 import Papa from 'papaparse';
 
 export const StudentsPage = () => {
+  const { schoolId } = useAuth();
   const [students, setStudents] = useState<any[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,15 +23,19 @@ export const StudentsPage = () => {
   }, [searchTerm, selectedGrade, students]);
 
   const loadStudents = async () => {
+    if (!schoolId) return;
+    
     try {
       const { data, error } = await supabase
         .from('students')
         .select(`
           *,
+          school:schools(name),
           parent_student(
-            parent:parents(*)
+            parent:parents(*, school:schools(name))
           )
         `)
+        .eq('school_id', schoolId)
         .order('student_name');
 
       if (error) throw error;

@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { supabase, sendBulkSMS } from '../lib/supabaseClient';
+import { useAuth } from '../hooks/useAuth';
 import { MessageSquare, Users, Send, CheckCircle, AlertCircle } from 'lucide-react';
 
 export const BulkSMSPage = () => {
+  const { schoolId } = useAuth();
   const [message, setMessage] = useState('');
   const [sendToAll, setSendToAll] = useState(true);
   const [selectedGrade, setSelectedGrade] = useState('');
@@ -18,15 +20,19 @@ export const BulkSMSPage = () => {
   }, []);
 
   const loadParents = async () => {
+    if (!schoolId) return;
+    
     try {
       const { data, error } = await supabase
         .from('parents')
         .select(`
           *,
+          school:schools(name),
           parent_student(
-            student:students(*)
+            student:students(*, school:schools(name))
           )
         `)
+        .eq('school_id', schoolId)
         .order('parent_name');
 
       if (error) throw error;

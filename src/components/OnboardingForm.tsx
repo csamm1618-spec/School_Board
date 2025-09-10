@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase, sendWelcomeSMS } from '../lib/supabaseClient';
+import { useAuth } from '../hooks/useAuth';
 import { UserPlus, Users, GraduationCap, Phone, Mail, User, Calendar } from 'lucide-react';
 
 export const OnboardingForm = () => {
+  const { schoolId } = useAuth();
   const [parentData, setParentData] = useState({
     parent_name: '',
     phone_number: '',
@@ -26,6 +28,12 @@ export const OnboardingForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!schoolId) {
+      setError('School information not available. Please try logging in again.');
+      return;
+    }
+    
     setLoading(true);
     setError('');
 
@@ -33,7 +41,7 @@ export const OnboardingForm = () => {
       // Insert parent
       const { data: parent, error: parentError } = await supabase
         .from('parents')
-        .insert([parentData])
+        .insert([{ ...parentData, school_id: schoolId }])
         .select()
         .single();
 
@@ -44,7 +52,8 @@ export const OnboardingForm = () => {
         .from('students')
         .insert([{
           ...studentData,
-          date_of_birth: studentData.date_of_birth || null
+          date_of_birth: studentData.date_of_birth || null,
+          school_id: schoolId
         }])
         .select()
         .single();
@@ -56,7 +65,8 @@ export const OnboardingForm = () => {
         .from('parent_student')
         .insert([{
           parent_id: parent.id,
-          student_id: student.id
+          student_id: student.id,
+          school_id: schoolId
         }]);
 
       if (linkError) throw linkError;

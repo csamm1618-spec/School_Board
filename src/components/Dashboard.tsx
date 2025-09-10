@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase, Parent, Student, ParentStudent } from '../lib/supabaseClient';
+import { supabase } from '../lib/supabaseClient';
+import { useAuth } from '../hooks/useAuth';
 import { 
   Users, 
   GraduationCap, 
@@ -14,6 +15,7 @@ import {
 import Papa from 'papaparse';
 
 export const Dashboard = () => {
+  const { schoolId, schoolName } = useAuth();
   const [stats, setStats] = useState({
     totalParents: 0,
     totalStudents: 0,
@@ -26,25 +28,30 @@ export const Dashboard = () => {
   }, []);
 
   const loadStats = async () => {
+    if (!schoolId) return;
+    
     try {
       // Get parent count
       const { count: parentCount } = await supabase
         .from('parents')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true })
+        .eq('school_id', schoolId);
 
       // Get student count
       const { count: studentCount } = await supabase
         .from('students')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true })
+        .eq('school_id', schoolId);
 
       // Get recent onboardings
       const { data: recentOnboardings } = await supabase
         .from('parent_student')
         .select(`
           *,
-          parent:parents(*),
-          student:students(*)
+          parent:parents(*, school:schools(name)),
+          student:students(*, school:schools(name))
         `)
+        .eq('school_id', schoolId)
         .order('created_at', { ascending: false })
         .limit(5);
 
@@ -61,10 +68,13 @@ export const Dashboard = () => {
   };
 
   const downloadParentContacts = async () => {
+    if (!schoolId) return;
+    
     try {
       const { data: parents } = await supabase
         .from('parents')
         .select('*')
+        .eq('school_id', schoolId)
         .order('parent_name');
 
       if (parents) {
@@ -83,10 +93,13 @@ export const Dashboard = () => {
   };
 
   const downloadStudentRecords = async () => {
+    if (!schoolId) return;
+    
     try {
       const { data: students } = await supabase
         .from('students')
         .select('*')
+        .eq('school_id', schoolId)
         .order('student_name');
 
       if (students) {
@@ -118,7 +131,10 @@ export const Dashboard = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-2">Welcome to your school management hub</p>
+          <p className="text-gray-600 mt-2">
+            Welcome to your school management hub
+            {schoolName && <span className="font-medium"> - {schoolName}</span>}
+          </p>
         </div>
 
         {/* Stats Cards */}
