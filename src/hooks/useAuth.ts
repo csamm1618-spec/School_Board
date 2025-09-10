@@ -35,16 +35,27 @@ export const useAuth = () => {
   }, []);
 
   const loadUserProfile = async (userId: string) => {
-    try {
-      const profile = await getUserSchoolInfo(userId);
-      setUserProfile(profile);
-    } catch (error) {
-      console.error('Error loading user profile:', error);
-      setUserProfile(null);
-    } finally {
-      setLoading(false);
+  try {
+    let profile = await getUserSchoolInfo(userId);
+
+    // If no profile exists yet, create one
+    if (!profile) {
+      // ⚡ You can choose how to assign schoolId here
+      // For now, let’s assume you have a "default" schoolId
+      const defaultSchoolId = "YOUR_DEFAULT_SCHOOL_ID";  
+
+      profile = await createUserProfile(userId, defaultSchoolId);
     }
-  };
+
+    setUserProfile(profile);
+  } catch (error) {
+    console.error('Error loading user profile:', error);
+    setUserProfile(null);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const signOut = async () => {
     await supabase.auth.signOut();
