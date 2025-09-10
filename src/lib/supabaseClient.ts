@@ -62,7 +62,7 @@ export const getUserSchoolInfo = async (userId: string) => {
     .eq('user_id', userId)
     .single();
 
-  if (error) throw error;
+  if (error && error.code !== 'PGRST116') throw error;
   return data;
 };
 
