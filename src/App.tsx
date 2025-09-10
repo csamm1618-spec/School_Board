@@ -6,6 +6,7 @@ import { OnboardingForm } from './components/OnboardingForm';
 import { ParentsPage } from './components/ParentsPage';
 import { StudentsPage } from './components/StudentsPage';
 import { BulkSMSPage } from './components/BulkSMSPage';
+import { DataImportPage } from './components/DataImportPage';
 import { AboutPage } from './components/AboutPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { useAuth } from './hooks/useAuth';
@@ -68,6 +69,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <BulkSMSPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/import"
+            element={
+              <ProtectedRoute>
+                <DataImportPage />
               </ProtectedRoute>
             }
           />

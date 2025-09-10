@@ -7,6 +7,7 @@ import {
   UserPlus, 
   Download, 
   MessageSquare,
+  Upload,
   TrendingUp,
   Clock
 } from 'lucide-react';
@@ -205,6 +206,14 @@ export const Dashboard = () => {
             >
               <MessageSquare className="h-6 w-6 text-purple-600" />
               <span className="font-medium text-purple-700">Send Bulk SMS</span>
+            </Link>
+
+            <Link
+              to="/import"
+              className="flex items-center space-x-3 p-4 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors border border-indigo-200"
+            >
+              <Upload className="h-6 w-6 text-indigo-600" />
+              <span className="font-medium text-indigo-700">Import Data</span>
             </Link>
           </div>
         </div>

@@ -6,6 +6,7 @@ import {
   Users, 
   GraduationCap, 
   MessageSquare, 
+  Upload,
   Info,
   LogOut,
   School
@@ -21,6 +22,7 @@ export const Navigation = () => {
     { name: 'Parents', path: '/parents', icon: Users },
     { name: 'Students', path: '/students', icon: GraduationCap },
     { name: 'Bulk SMS', path: '/sms', icon: MessageSquare },
+    { name: 'Import Data', path: '/import', icon: Upload },
     { name: 'About', path: '/about', icon: Info },
   ];
 
