@@ -17,10 +17,11 @@ export const AuthPage = () => {
   const [emailSent, setEmailSent] = useState(false);
   const [userEmail, setUserEmail] = useState('');
 
-  // Load schools when component mounts
-  useState(() => {
-    loadSchools();
-  });
+ // Load schools when component mounts
+useEffect(() => {
+  loadSchools();
+}, []);
+
 
   const loadSchools = async () => {
     try {
