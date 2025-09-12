@@ -10,7 +10,8 @@ import {
   MessageSquare,
   Upload,
   TrendingUp,
-  Clock
+  Clock,
+  AlertCircle
 } from 'lucide-react';
 import Papa from 'papaparse';
 
@@ -28,7 +29,10 @@ export const Dashboard = () => {
   }, []);
 
   const loadStats = async () => {
-    if (!schoolId) return;
+    if (!schoolId) {
+      setLoading(false);
+      return;
+    }
     
     try {
       // Get parent count
@@ -116,6 +120,35 @@ export const Dashboard = () => {
       console.error('Error downloading student records:', error);
     }
   };
+
+  // If no school ID is available, show informative message
+  if (!loading && !schoolId) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-yellow-50">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+            <div className="bg-yellow-100 p-4 rounded-full w-16 h-16 mx-auto mb-6">
+              <AlertCircle className="h-8 w-8 text-yellow-600 mx-auto" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">School Information Missing</h2>
+            <p className="text-gray-600 mb-6">
+              Your account is not associated with a school. Please contact your administrator 
+              to set up your school profile.
+            </p>
+            <div className="space-y-4">
+              <p className="text-sm text-gray-500">
+                If you're an administrator, you may need to:
+              </p>
+              <ul className="text-sm text-gray-500 list-disc list-inside space-y-1">
+                <li>Add a school to your Supabase database</li>
+                <li>Associate your user profile with a school</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
