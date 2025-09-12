@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'URL=https://tfebkdddfvhvlemkmnae.supabase.co';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL https://tfebkdddfvhvlemkmnae.supabase.co';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmZWJrZGRkZnZodmxlbWttbmFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0NDMyNjYsImV4cCI6MjA3MzAxOTI2Nn0.KBNc_GHrUk25vLkzEcCqyG_sNj7WGzQP4BKoAB_hxvM';
 // No longer needed as users will create their own school
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
