@@ -49,7 +49,7 @@ export const AuthPage = () => {
           throw error;
         } else {
           // Create user profile with selected school
-          if (data.user && selectedSchoolId) {
+          if (data.user) {
             // First, create the new school
             const newSchool = await createSchool(newSchoolName.trim());
             if (!newSchool) {
