@@ -29,50 +29,36 @@ export const AuthPage = () => {
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setAuthLoading(true);
+  e.preventDefault();
+  setError('');
+  setAuthLoading(true);
 
-    try {
-      if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) throw error;
+  try {
+    if (isLogin) {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) throw error;
+    } else {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+      if (error) {
+        throw error;
       } else {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-        });
-        if (error) {
-          throw error;
-        } else {
-          // Create user profile with selected school
-          if (data.user) {
-            // First, create the new school
-            const newSchool = await createSchool(newSchoolName.trim());
-            if (!newSchool) {
-              throw new Error('Failed to create school.');
-            }
-
-            try {
-              await createUserProfile(data.user.id, newSchool.id);
-            } catch (profileError) {
-              console.error('Error creating user profile after school creation:', profileError);
-            }
-          }
-          // Sign up successful, show email confirmation message
-          setEmailSent(true);
-          setUserEmail(email);
-        }
+        // ✅ Trigger handles school + profile creation
+        setEmailSent(true);
+        setUserEmail(email);
       }
-    } catch (error: any) {
-      setError(error.message);
-    } finally {
-      setAuthLoading(false);
     }
-  };
+  } catch (error: any) {
+    setError(error.message);
+  } finally {
+    setAuthLoading(false);
+  }
+};
 
   const handleBackToLogin = () => {
     setEmailSent(false);
