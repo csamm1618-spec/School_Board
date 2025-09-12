@@ -70,10 +70,7 @@ export const getUserSchoolInfo = async (userId: string) => {
 export const createUserProfile = async (userId: string, schoolId: string) => {
   const { data, error } = await supabase
     .from('user_profiles')
-    .insert([{
-      user_id: userId,
-      school_id: schoolId
-    }])
+    .insert([{user_id: userId,school_id: schoolId}])
     .select()
     .single();
 
