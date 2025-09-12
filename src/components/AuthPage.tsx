@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
-import { supabase, getSchools, createUserProfile, School } from '../lib/supabaseClient';
+import { supabase, createSchool, createUserProfile } from '../lib/supabaseClient';
 import { useAuth } from '../hooks/useAuth';
 import { School as SchoolIcon, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 
@@ -9,32 +9,12 @@ export const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [selectedSchoolId, setSelectedSchoolId] = useState('');
-  const [schools, setSchools] = useState<School[]>([]);
+  const [newSchoolName, setNewSchoolName] = useState(''); // New state for school name
   const [showPassword, setShowPassword] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
   const [error, setError] = useState('');
   const [emailSent, setEmailSent] = useState(false);
   const [userEmail, setUserEmail] = useState('');
-
- // Load schools when component mounts
-useEffect(() => {
-  loadSchools();
-}, []);
-
-
-  const loadSchools = async () => {
-    try {
-      const schoolData = await getSchools();
-      setSchools(schoolData);
-      // Set first school as default if available
-      if (schoolData.length > 0) {
-        setSelectedSchoolId(schoolData[0].id);
-      }
-    } catch (error) {
-      console.error('Error loading schools:', error);
-    }
-  };
 
   if (loading) {
     return (
@@ -70,10 +50,16 @@ useEffect(() => {
         } else {
           // Create user profile with selected school
           if (data.user && selectedSchoolId) {
+            // First, create the new school
+            const newSchool = await createSchool(newSchoolName.trim());
+            if (!newSchool) {
+              throw new Error('Failed to create school.');
+            }
+
             try {
-              await createUserProfile(data.user.id, selectedSchoolId);
+              await createUserProfile(data.user.id, newSchool.id);
             } catch (profileError) {
-              console.error('Error creating user profile:', profileError);
+              console.error('Error creating user profile after school creation:', profileError);
             }
           }
           // Sign up successful, show email confirmation message
@@ -93,6 +79,7 @@ useEffect(() => {
     setIsLogin(true);
     setEmail('');
     setPassword('');
+    setNewSchoolName('');
     setError('');
     setUserEmail('');
   };
@@ -228,32 +215,26 @@ useEffect(() => {
               </div>
 
               {!isLogin && (
-                <div>
-                  <label htmlFor="school" className="block text-sm font-medium text-gray-700">
-                    Select School
+                <div className="mb-4">
+                  <label htmlFor="newSchoolName" className="block text-sm font-medium text-gray-700">
+                    School Name <span className="text-red-500">*</span>
                   </label>
                   <div className="mt-1">
-                    <select
-                      id="school"
-                      required={!isLogin}
-                      value={selectedSchoolId}
-                      onChange={(e) => setSelectedSchoolId(e.target.value)}
+                    <input
+                      id="newSchoolName"
+                      type="text"
+                      required
+                      value={newSchoolName}
+                      onChange={(e) => setNewSchoolName(e.target.value)}
                       className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="">Select a school</option>
-                      {schools.map((school) => (
-                        <option key={school.id} value={school.id}>
-                          {school.name}
-                        </option>
-                      ))}
-                    </select>
+                      placeholder="Enter your school's name"
+                    />
                   </div>
                 </div>
               )}
-
               <button
                 type="submit"
-                disabled={authLoading || (!isLogin && !selectedSchoolId)}
+                disabled={authLoading || (!isLogin && !newSchoolName.trim())}
                 className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {authLoading ? (

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
-import { supabase, getUserSchoolInfo, createUserProfile, UserProfile, getSchools } from '../lib/supabaseClient';
+import { supabase, getUserSchoolInfo, UserProfile } from '../lib/supabaseClient';
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -47,16 +47,8 @@ export const useAuth = () => {
       let profile = await getUserSchoolInfo(userId);
 
       // If no profile exists yet, create one
-      if (!profile) {
-        // Get the first available school as default
-        const schools = await getSchools();
-        if (schools.length === 0) {
-          throw new Error('No schools available. Please contact administrator.');
-        }
-        
-        const defaultSchoolId = schools[0].id;
-        profile = await createUserProfile(userId, defaultSchoolId);
-      }
+      // The AuthPage now handles school creation and user profile linking during signup.
+      // If a profile is missing here, it indicates an issue or a user signed up externally.
 
       setUserProfile(profile);
     } catch (error) {
