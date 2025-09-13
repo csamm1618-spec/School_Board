@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../hooks/useAuth';
-import { Search, Download, GraduationCap, Calendar, Users, AlertCircle } from 'lucide-react';
+import { Search, Download, GraduationCap, Calendar, Users, AlertCircle, ArrowUp, CheckCircle, XCircle } from 'lucide-react';
 import Papa from 'papaparse';
 
 export const StudentsPage = () => {
@@ -11,6 +11,11 @@ export const StudentsPage = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGrade, setSelectedGrade] = useState('');
+  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
+  const [newGradeToPromote, setNewGradeToPromote] = useState('');
+  const [isPromoting, setIsPromoting] = useState(false);
+  const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState<'success' | 'error' | ''>('');
 
   const grades = ['All', 'P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'JHS1', 'JHS2', 'JHS3'];
 
@@ -87,6 +92,55 @@ export const StudentsPage = () => {
     a.download = 'student_records.csv';
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleStudentSelection = (studentId: string) => {
+    setSelectedStudentIds(prev => 
+      prev.includes(studentId) 
+        ? prev.filter(id => id !== studentId)
+        : [...prev, studentId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedStudentIds.length === filteredStudents.length) {
+      setSelectedStudentIds([]);
+    } else {
+      setSelectedStudentIds(filteredStudents.map(student => student.id));
+    }
+  };
+
+  const handlePromoteStudents = async () => {
+    if (!newGradeToPromote || selectedStudentIds.length === 0) return;
+
+    setIsPromoting(true);
+    setMessage('');
+    setMessageType('');
+
+    try {
+      const { error } = await supabase
+        .from('students')
+        .update({ grade: newGradeToPromote })
+        .in('id', selectedStudentIds);
+
+      if (error) throw error;
+
+      setMessage(`Successfully promoted ${selectedStudentIds.length} student(s) to ${newGradeToPromote}`);
+      setMessageType('success');
+      setSelectedStudentIds([]);
+      setNewGradeToPromote('');
+      await loadStudents();
+    } catch (error: any) {
+      setMessage(`Failed to promote students: ${error.message}`);
+      setMessageType('error');
+    } finally {
+      setIsPromoting(false);
+      // Clear message after 5 seconds
+      setTimeout(() => {
+        setMessage('');
+        setMessageType('');
+      }, 5000);
+    }
   };
 
   const getGradeStats = () => {
@@ -181,6 +235,80 @@ export const StudentsPage = () => {
           </div>
         </div>
 
+        {/* Promotion Controls */}
+        {selectedStudentIds.length > 0 && (
+          <div className="bg-white rounded-xl shadow-lg p-6 mb-6 border-l-4 border-blue-500">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+              <div className="flex items-center space-x-4">
+                <div className="bg-blue-100 p-2 rounded-lg">
+                  <ArrowUp className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">
+                    Promote {selectedStudentIds.length} Selected Student{selectedStudentIds.length > 1 ? 's' : ''}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    Move selected students to a new grade level
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <select
+                  value={newGradeToPromote}
+                  onChange={(e) => setNewGradeToPromote(e.target.value)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Select new grade</option>
+                  {grades.filter(grade => grade !== 'All').map((grade) => (
+                    <option key={grade} value={grade}>
+                      {grade}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={handlePromoteStudents}
+                  disabled={!newGradeToPromote || selectedStudentIds.length === 0 || isPromoting}
+                  className="flex items-center space-x-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isPromoting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>Promoting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <ArrowUp className="h-4 w-4" />
+                      <span>Promote Students</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Success/Error Message */}
+        {message && (
+          <div className={`rounded-xl shadow-lg p-4 mb-6 ${
+            messageType === 'success' 
+              ? 'bg-green-50 border border-green-200' 
+              : 'bg-red-50 border border-red-200'
+          }`}>
+            <div className="flex items-center space-x-3">
+              {messageType === 'success' ? (
+                <CheckCircle className="h-6 w-6 text-green-600" />
+              ) : (
+                <XCircle className="h-6 w-6 text-red-600" />
+              )}
+              <p className={`font-medium ${
+                messageType === 'success' ? 'text-green-800' : 'text-red-800'
+              }`}>
+                {message}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Stats */}
         <div className="grid md:grid-cols-4 gap-6 mb-6">
           <div className="bg-white rounded-xl shadow-lg p-6">
@@ -235,6 +363,14 @@ export const StudentsPage = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <input
+                      type="checkbox"
+                      checked={filteredStudents.length > 0 && selectedStudentIds.length === filteredStudents.length}
+                      onChange={handleSelectAll}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Student Name
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -252,6 +388,14 @@ export const StudentsPage = () => {
                 {filteredStudents.length > 0 ? (
                   filteredStudents.map((student) => (
                     <tr key={student.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <input
+                          type="checkbox"
+                          checked={selectedStudentIds.includes(student.id)}
+                          onChange={() => handleStudentSelection(student.id)}
+                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="bg-yellow-100 p-2 rounded-lg mr-3">
@@ -298,7 +442,7 @@ export const StudentsPage = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center">
+                    <td colSpan={5} className="px-6 py-12 text-center">
                       <GraduationCap className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                       <p className="text-gray-500">
                         {searchTerm || selectedGrade ? 'No students found matching your criteria' : 'No students registered yet'}
