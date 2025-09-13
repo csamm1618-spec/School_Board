@@ -3,11 +3,21 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+// Debug: Check if environment variables are loaded
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('Missing Supabase environment variables:', {
+    VITE_SUPABASE_URL: supabaseUrl,
+    VITE_SUPABASE_ANON_KEY: supabaseAnonKey ? 'Present' : 'Missing'
+  });
+}
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export interface School {
   id: string;
   name: string;
+  location: string;
+  logo_url?: string;
   created_at: string;
 }
 
@@ -15,6 +25,7 @@ export interface UserProfile {
   id: string;
   user_id: string;
   school_id: string;
+  profile_name?: string;
   created_at: string;
   school?: School;
 }
@@ -67,10 +78,10 @@ export const getUserSchoolInfo = async (userId: string) => {
 };
 
 // Helper function to create user profile for new signups
-export const createUserProfile = async (userId: string, schoolId: string) => {
+export const createUserProfile = async (userId: string, schoolId: string, profileName?: string) => {
   const { data, error } = await supabase
     .from('user_profiles')
-    .insert([{user_id: userId,school_id: schoolId}])
+    .insert([{user_id: userId, school_id: schoolId, profile_name: profileName}])
     .select()
     .single();
 
@@ -90,10 +101,47 @@ export const getSchools = async () => {
 };
 
 // Helper function to create a new school
-export const createSchool = async (schoolName: string) => {
+export const createSchool = async (schoolName: string, location?: string) => {
   const { data, error } = await supabase
     .from('schools')
-    .insert([{ name: schoolName }])
+    .insert([{ name: schoolName, location: location || '' }])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+// Helper function to upload school logo
+export const uploadSchoolLogo = async (schoolId: string, file: File) => {
+  try {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${schoolId}-logo-${Date.now()}.${fileExt}`;
+    const filePath = `school-logos/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('school-assets')
+      .upload(filePath, file);
+
+    if (uploadError) throw uploadError;
+
+    const { data } = supabase.storage
+      .from('school-assets')
+      .getPublicUrl(filePath);
+
+    return data.publicUrl;
+  } catch (error) {
+    console.error('Error uploading school logo:', error);
+    throw error;
+  }
+};
+
+// Helper function to update school logo URL
+export const updateSchoolLogo = async (schoolId: string, logoUrl: string) => {
+  const { data, error } = await supabase
+    .from('schools')
+    .update({ logo_url: logoUrl })
+    .eq('id', schoolId)
     .select()
     .single();
 

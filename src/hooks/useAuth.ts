@@ -27,7 +27,7 @@ export const useAuth = () => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (_, session) => {
         setLoading(true);
         setUser(session?.user ?? null);
         if (session?.user) {
@@ -74,6 +74,7 @@ export const useAuth = () => {
     userProfile, 
     schoolId: userProfile?.school_id,
     schoolName: userProfile?.school?.name,
+    profileName: userProfile?.profile_name,
     loading, 
     signOut,
     refetchUserProfile

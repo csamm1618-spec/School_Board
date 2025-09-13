@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState} from 'react';
 import { Navigate } from 'react-router-dom';
 import { supabase, createSchool, createUserProfile } from '../lib/supabaseClient';
 import { useAuth } from '../hooks/useAuth';
@@ -10,6 +10,7 @@ export const AuthPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [newSchoolName, setNewSchoolName] = useState(''); // New state for school name
+  const [newSchoolLocation, setNewSchoolLocation] = useState(''); // New state for school location
   const [showPassword, setShowPassword] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
   const [error, setError] = useState('');
@@ -51,13 +52,13 @@ export const AuthPage = () => {
           // Create user profile with selected school
           if (data.user) {
             // First, create the new school
-            const newSchool = await createSchool(newSchoolName.trim());
+            const newSchool = await createSchool(newSchoolName.trim(), newSchoolLocation.trim());
             if (!newSchool) {
               throw new Error('Failed to create school.');
             }
 
             try {
-              await createUserProfile(data.user.id, newSchool.id);
+              await createUserProfile(data.user.id, newSchool.id, newSchool.name);
             } catch (profileError) {
               console.error('Error creating user profile after school creation:', profileError);
             }
@@ -80,6 +81,7 @@ export const AuthPage = () => {
     setEmail('');
     setPassword('');
     setNewSchoolName('');
+    setNewSchoolLocation('');
     setError('');
     setUserEmail('');
   };
@@ -215,26 +217,45 @@ export const AuthPage = () => {
               </div>
 
               {!isLogin && (
-                <div className="mb-4">
-                  <label htmlFor="newSchoolName" className="block text-sm font-medium text-gray-700">
-                    School Name <span className="text-red-500">*</span>
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      id="newSchoolName"
-                      type="text"
-                      required
-                      value={newSchoolName}
-                      onChange={(e) => setNewSchoolName(e.target.value)}
-                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Enter your school's name"
-                    />
+                <>
+                  <div className="mb-4">
+                    <label htmlFor="newSchoolName" className="block text-sm font-medium text-gray-700">
+                      School Name <span className="text-red-500">*</span>
+                    </label>
+                    <div className="mt-1">
+                      <input
+                        id="newSchoolName"
+                        type="text"
+                        required
+                        value={newSchoolName}
+                        onChange={(e) => setNewSchoolName(e.target.value)}
+                        className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Enter your school's name"
+                      />
+                    </div>
                   </div>
-                </div>
+                  
+                  <div className="mb-4">
+                    <label htmlFor="newSchoolLocation" className="block text-sm font-medium text-gray-700">
+                      School Location <span className="text-red-500">*</span>
+                    </label>
+                    <div className="mt-1">
+                      <input
+                        id="newSchoolLocation"
+                        type="text"
+                        required
+                        value={newSchoolLocation}
+                        onChange={(e) => setNewSchoolLocation(e.target.value)}
+                        className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Enter your school's location (e.g., City, State)"
+                      />
+                    </div>
+                  </div>
+                </>
               )}
               <button
                 type="submit"
-                disabled={authLoading || (!isLogin && !newSchoolName.trim())}
+                disabled={authLoading || (!isLogin && (!newSchoolName.trim() || !newSchoolLocation.trim()))}
                 className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {authLoading ? (
