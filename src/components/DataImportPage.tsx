@@ -206,7 +206,7 @@ export const DataImportPage = () => {
             .select('id')
             .eq('parent_id', parentId)
             .eq('student_id', studentId)
-            .single();
+            .maybeSingle();
 
           if (!existingRelation) {
             const { error: relationError } = await supabase
