@@ -63,12 +63,19 @@ export const useAuth = () => {
     setUserProfile(null);
   };
 
+  const refetchUserProfile = async () => {
+    if (user) {
+      await loadUserProfile(user.id);
+    }
+  };
+
   return { 
     user, 
     userProfile, 
     schoolId: userProfile?.school_id,
     schoolName: userProfile?.school?.name,
     loading, 
-    signOut 
+    signOut,
+    refetchUserProfile
   };
 };

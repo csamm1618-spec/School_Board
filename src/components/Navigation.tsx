@@ -7,7 +7,7 @@ import {
   GraduationCap, 
   MessageSquare, 
   Upload,
-  Info,
+  Settings,
   LogOut,
   School
 } from 'lucide-react';
@@ -23,7 +23,7 @@ export const Navigation = () => {
     { name: 'Students', path: '/students', icon: GraduationCap },
     { name: 'Bulk SMS', path: '/sms', icon: MessageSquare },
     { name: 'Import Data', path: '/import', icon: Upload },
-    { name: 'About', path: '/about', icon: Info },
+    { name: 'Settings', path: '/settings', icon: Settings },
   ];
 
   if (!user) {

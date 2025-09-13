@@ -7,7 +7,7 @@ import { ParentsPage } from './components/ParentsPage';
 import { StudentsPage } from './components/StudentsPage';
 import { BulkSMSPage } from './components/BulkSMSPage';
 import { DataImportPage } from './components/DataImportPage';
-import { AboutPage } from './components/AboutPage';
+import { SettingsPage } from './components/SettingsPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { useAuth } from './hooks/useAuth';
 
@@ -29,7 +29,6 @@ function App() {
         <Routes>
           {/* Public routes */}
           <Route path="/auth" element={<AuthPage />} />
-          <Route path="/about" element={<AboutPage />} />
           
           {/* Protected routes */}
           <Route
@@ -77,6 +76,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <DataImportPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <SettingsPage />
               </ProtectedRoute>
             }
           />
