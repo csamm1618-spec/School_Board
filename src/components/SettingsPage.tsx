@@ -15,11 +15,7 @@ import {
   Upload,
   Image as ImageIcon,
   X
-  Upload,
-  Image as ImageIcon,
-  X
 } from 'lucide-react';
-import { uploadSchoolLogo, updateSchoolLogo } from '../lib/supabaseClient';
 import { uploadSchoolLogo, updateSchoolLogo } from '../lib/supabaseClient';
 
 export const SettingsPage = () => {
