@@ -50,10 +50,22 @@ export const useAuth = () => {
       // The AuthPage now handles school creation and user profile linking during signup.
       // If a profile is missing here, it indicates an issue or a user signed up externally.
 
+      // Ensure profile has a role, default to 'staff' if missing
+      if (profile && !profile.role) {
+        profile.role = 'staff';
+      }
+
       setUserProfile(profile);
     } catch (error) {
       console.error('Error loading user profile:', error);
-      setUserProfile(null);
+      // Set a default profile structure to prevent infinite loading
+      setUserProfile({
+        id: '',
+        user_id: userId,
+        school_id: '',
+        role: 'staff',
+        created_at: new Date().toISOString()
+      });
     }
   };
 
@@ -74,7 +86,9 @@ export const useAuth = () => {
     userProfile, 
     schoolId: userProfile?.school_id,
     schoolName: userProfile?.school?.name,
+    schoolLogoUrl: userProfile?.school?.logo_url,
     profileName: userProfile?.profile_name,
+    userRole: userProfile?.role || 'staff',
     loading, 
     signOut,
     refetchUserProfile

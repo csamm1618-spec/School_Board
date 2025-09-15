@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { PermissionGate } from './PermissionGate';
 import { 
   Home, 
   UserPlus, 
@@ -9,11 +10,12 @@ import {
   Upload,
   Settings,
   LogOut,
-  School
+  School,
+  Shield
 } from 'lucide-react';
 
 export const Navigation = () => {
-  const { user, schoolName, signOut } = useAuth();
+  const { user, schoolName, userRole, signOut } = useAuth();
   const location = useLocation();
 
   const navItems = [
@@ -25,6 +27,11 @@ export const Navigation = () => {
     { name: 'Import Data', path: '/import', icon: Upload },
     { name: 'Settings', path: '/settings', icon: Settings },
   ];
+
+  // Add Staff Management for owners only
+  if (userRole === 'owner') {
+    navItems.push({ name: 'Staff', path: '/staff', icon: Shield });
+  }
 
   if (!user) {
     return (

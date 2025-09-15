@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../hooks/useAuth';
 import { 
@@ -19,7 +19,7 @@ import {
 import { uploadSchoolLogo, updateSchoolLogo } from '../lib/supabaseClient';
 
 export const SettingsPage = () => {
-  const { user, schoolId, schoolName, refetchUserProfile } = useAuth();
+  const { user, schoolId, schoolName, schoolLogoUrl, refetchUserProfile } = useAuth();
   const [schoolNameInput, setSchoolNameInput] = useState(schoolName || '');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -40,6 +40,11 @@ export const SettingsPage = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
+
+  // Initialize current logo URL when component mounts or schoolLogoUrl changes
+  useEffect(() => {
+    setCurrentLogoUrl(schoolLogoUrl || null);
+  }, [schoolLogoUrl]);
 
   const handleUpdateSchoolName = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -158,6 +163,7 @@ export const SettingsPage = () => {
       // Refresh user profile to get updated school info
       await refetchUserProfile();
       
+      // Update the current logo URL to show the new logo immediately
       setCurrentLogoUrl(logoUrl);
       setMessage('School logo updated successfully!');
       setMessageType('success');
@@ -209,6 +215,42 @@ export const SettingsPage = () => {
   const removeLogo = () => {
     setLogoFile(null);
     setLogoPreview(null);
+  };
+
+  const removeCurrentLogo = async () => {
+    if (!schoolId) return;
+    
+    setLogoLoading(true);
+    setMessage('');
+    setMessageType('');
+
+    try {
+      // Update the school record to remove the logo URL
+      const { error } = await supabase
+        .from('schools')
+        .update({ logo_url: null })
+        .eq('id', schoolId);
+
+      if (error) throw error;
+
+      // Refresh user profile to get updated school info
+      await refetchUserProfile();
+      
+      // Clear the current logo URL
+      setCurrentLogoUrl(null);
+      setMessage('School logo removed successfully!');
+      setMessageType('success');
+    } catch (error: any) {
+      setMessage(`Failed to remove logo: ${error.message}`);
+      setMessageType('error');
+    } finally {
+      setLogoLoading(false);
+      // Clear message after 5 seconds
+      setTimeout(() => {
+        setMessage('');
+        setMessageType('');
+      }, 5000);
+    }
   };
 
   // If no school ID is available, show informative message
@@ -285,12 +327,26 @@ export const SettingsPage = () => {
               {currentLogoUrl && (
                 <div className="mb-4">
                   <p className="text-sm text-gray-600 mb-2">Current Logo:</p>
-                  <div className="relative inline-block">
-                    <img
-                      src={currentLogoUrl}
-                      alt="Current school logo"
-                      className="h-20 w-20 object-cover rounded-lg border border-gray-200"
-                    />
+                  <div className="flex items-center space-x-4">
+                    <div className="relative inline-block">
+                      <img
+                        src={currentLogoUrl}
+                        alt="Current school logo"
+                        className="h-20 w-20 object-cover rounded-lg border border-gray-200"
+                      />
+                    </div>
+                    <button
+                      onClick={removeCurrentLogo}
+                      disabled={logoLoading}
+                      className="flex items-center space-x-2 text-red-600 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {logoLoading ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                      ) : (
+                        <X className="h-4 w-4" />
+                      )}
+                      <span className="text-sm">Remove Logo</span>
+                    </button>
                   </div>
                 </div>
               )}

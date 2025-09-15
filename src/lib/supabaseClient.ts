@@ -21,11 +21,14 @@ export interface School {
   created_at: string;
 }
 
+export type Role = 'owner' | 'staff';
+
 export interface UserProfile {
   id: string;
   user_id: string;
   school_id: string;
   profile_name?: string;
+  role: Role;
   created_at: string;
   school?: School;
 }
@@ -78,10 +81,10 @@ export const getUserSchoolInfo = async (userId: string) => {
 };
 
 // Helper function to create user profile for new signups
-export const createUserProfile = async (userId: string, schoolId: string, profileName?: string) => {
+export const createUserProfile = async (userId: string, schoolId: string, profileName?: string, role: Role = 'owner') => {
   const { data, error } = await supabase
     .from('user_profiles')
-    .insert([{user_id: userId, school_id: schoolId, profile_name: profileName}])
+    .insert([{user_id: userId, school_id: schoolId, profile_name: profileName, role}])
     .select()
     .single();
 

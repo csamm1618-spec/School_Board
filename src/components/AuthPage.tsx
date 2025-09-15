@@ -58,7 +58,7 @@ export const AuthPage = () => {
             }
 
             try {
-              await createUserProfile(data.user.id, newSchool.id, newSchool.name);
+              await createUserProfile(data.user.id, newSchool.id, newSchool.name, 'owner');
             } catch (profileError) {
               console.error('Error creating user profile after school creation:', profileError);
             }

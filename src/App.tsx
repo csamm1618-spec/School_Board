@@ -8,11 +8,21 @@ import { StudentsPage } from './components/StudentsPage';
 import { BulkSMSPage } from './components/BulkSMSPage';
 import { DataImportPage } from './components/DataImportPage';
 import { SettingsPage } from './components/SettingsPage';
+import { RoleManagementPage } from './components/RoleManagementPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { EnvironmentCheck } from './components/EnvironmentCheck';
 import { useAuth } from './hooks/useAuth';
 
 function App() {
   const { user, loading } = useAuth();
+
+  // Check if environment variables are missing
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return <EnvironmentCheck />;
+  }
 
   if (loading) {
     return (
@@ -84,6 +94,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <SettingsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/staff"
+            element={
+              <ProtectedRoute>
+                <RoleManagementPage />
               </ProtectedRoute>
             }
           />
