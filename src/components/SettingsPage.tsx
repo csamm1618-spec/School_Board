@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../hooks/useAuth';
 import { 
@@ -29,12 +30,6 @@ export const SettingsPage = () => {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoLoading, setLogoLoading] = useState(false);
-  const currentLogoUrl = userProfile?.school?.logo_url || null;
-  
-  // Logo upload states
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [logoLoading, setLogoLoading] = useState(false);
   const [currentLogoUrl, setCurrentLogoUrl] = useState<string | null>(null);
 
   // Password change states
@@ -46,6 +41,11 @@ export const SettingsPage = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
+
+  // Update currentLogoUrl when userProfile changes
+  useEffect(() => {
+    setCurrentLogoUrl(userProfile?.school?.logo_url || null);
+  }, [userProfile]);
 
   const handleUpdateSchoolName = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,81 +88,6 @@ export const SettingsPage = () => {
         setMessageType('');
       }, 5000);
     }
-  };
-
-  const handleLogoUpload = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!logoFile || !schoolId) {
-      setMessage('Please select a logo file');
-      setMessageType('error');
-      return;
-    }
-
-    setLogoLoading(true);
-    setMessage('');
-    setMessageType('');
-
-    try {
-      // Upload the logo file
-      const logoUrl = await uploadSchoolLogo(schoolId, logoFile);
-      
-      // Update the school record with the logo URL
-      await updateSchoolLogo(schoolId, logoUrl);
-      
-      // Refresh user profile to get updated school info
-      await refetchUserProfile();
-      
-      setMessage('School logo updated successfully!');
-      setMessageType('success');
-      
-      // Clear the file input
-      setLogoFile(null);
-      setLogoPreview(null);
-    } catch (error: any) {
-      setMessage(`Failed to upload logo: ${error.message}`);
-      setMessageType('error');
-    } finally {
-      setLogoLoading(false);
-      // Clear message after 5 seconds
-      setTimeout(() => {
-        setMessage('');
-        setMessageType('');
-      }, 5000);
-    }
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        setMessage('Please select an image file');
-        setMessageType('error');
-        return;
-      }
-      
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        setMessage('File size must be less than 5MB');
-        setMessageType('error');
-        return;
-      }
-      
-      setLogoFile(file);
-      
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setLogoPreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const removeLogo = () => {
-    setLogoFile(null);
-    setLogoPreview(null);
   };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
@@ -239,7 +164,6 @@ export const SettingsPage = () => {
       // Refresh user profile to get updated school info
       await refetchUserProfile();
       
-      setCurrentLogoUrl(logoUrl);
       setMessage('School logo updated successfully!');
       setMessageType('success');
       
@@ -354,86 +278,6 @@ export const SettingsPage = () => {
                 <h2 className="text-xl font-semibold text-gray-900">School Information</h2>
                 <p className="text-gray-600">Update your school's basic information and logo</p>
               </div>
-            </div>
-
-            {/* School Logo Section */}
-            <div className="mb-8">
-              <label className="block text-sm font-medium text-gray-700 mb-4">
-                School Logo
-              </label>
-              
-              {/* Current Logo Display */}
-              {currentLogoUrl && (
-                <div className="mb-4">
-                  <p className="text-sm text-gray-600 mb-2">Current Logo:</p>
-                  <div className="relative inline-block">
-                    <img
-                      src={currentLogoUrl}
-                      alt="Current school logo"
-                      className="h-20 w-20 object-cover rounded-lg border border-gray-200"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Logo Upload Form */}
-              <form onSubmit={handleLogoUpload} className="space-y-4">
-                <div className="flex items-center space-x-4">
-                  <div className="flex-1">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileSelect}
-                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      PNG, JPG, GIF up to 5MB. Recommended size: 200x200px
-                    </p>
-                  </div>
-                  
-                  {logoFile && (
-                    <button
-                      type="button"
-                      onClick={removeLogo}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <X className="h-5 w-5" />
-                    </button>
-                  )}
-                </div>
-
-                {/* Logo Preview */}
-                {logoPreview && (
-                  <div className="mt-4">
-                    <p className="text-sm text-gray-600 mb-2">Preview:</p>
-                    <img
-                      src={logoPreview}
-                      alt="Logo preview"
-                      className="h-20 w-20 object-cover rounded-lg border border-gray-200"
-                    />
-                  </div>
-                )}
-
-                <div className="flex justify-end">
-                  <button
-                    type="submit"
-                    disabled={logoLoading || !logoFile}
-                    className="flex items-center space-x-2 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {logoLoading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                        <span>Uploading...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="h-5 w-5" />
-                        <span>Upload Logo</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
             </div>
 
             {/* School Logo Section */}
