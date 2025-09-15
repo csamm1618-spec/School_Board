@@ -38,7 +38,7 @@ export const Navigation = () => {
       <nav className="bg-white shadow-lg border-b-4 border-yellow-400">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link to="/" className="flex items-center space-x-2">
+            <Link to="/landing" className="flex items-center space-x-2">
               <School className="h-8 w-8 text-blue-600" />
               <span className="text-xl font-bold text-blue-600">School Board</span>
             </Link>

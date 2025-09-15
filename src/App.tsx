@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Navigation } from './components/Navigation';
+import { LandingPage } from './components/LandingPage';
 import { AuthPage } from './components/AuthPage';
 import { Dashboard } from './components/Dashboard';
 import { OnboardingForm } from './components/OnboardingForm';
@@ -38,6 +39,7 @@ function App() {
         <Navigation />
         <Routes>
           {/* Public routes */}
+          <Route path="/landing" element={<LandingPage />} />
           <Route path="/auth" element={<AuthPage />} />
           
           {/* Protected routes */}
@@ -109,7 +111,7 @@ function App() {
           {/* Redirect root based on auth status */}
           <Route
             path="/"
-            element={user ? <Navigate to="/dashboard" replace /> : <Navigate to="/auth" replace />}
+            element={user ? <Navigate to="/dashboard" replace /> : <Navigate to="/landing" replace />}
           />
         </Routes>
       </div>
