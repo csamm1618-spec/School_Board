@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../hooks/useAuth';
 import { 
@@ -19,7 +19,7 @@ import {
 import { uploadSchoolLogo, updateSchoolLogo } from '../lib/supabaseClient';
 
 export const SettingsPage = () => {
-  const { user, schoolId, schoolName, schoolLogoUrl, refetchUserProfile } = useAuth();
+  const { user, schoolId, schoolName, refetchUserProfile } = useAuth();
   const [schoolNameInput, setSchoolNameInput] = useState(schoolName || '');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -40,11 +40,6 @@ export const SettingsPage = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
-
-  // Initialize current logo URL when component mounts or schoolLogoUrl changes
-  useEffect(() => {
-    setCurrentLogoUrl(schoolLogoUrl || null);
-  }, [schoolLogoUrl]);
 
   const handleUpdateSchoolName = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,7 +158,6 @@ export const SettingsPage = () => {
       // Refresh user profile to get updated school info
       await refetchUserProfile();
       
-      // Update the current logo URL to show the new logo immediately
       setCurrentLogoUrl(logoUrl);
       setMessage('School logo updated successfully!');
       setMessageType('success');
