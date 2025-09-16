@@ -139,8 +139,24 @@ export const LandingPage = () => {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {features.map((feature, index) => {
               const Icon = feature.icon;
+              const featureImages = [
+                "https://images.pexels.com/photos/8613200/pexels-photo-8613200.jpeg?auto=compress&cs=tinysrgb&w=400", // Parent-Student Onboarding
+                "https://images.pexels.com/photos/4050315/pexels-photo-4050315.jpeg?auto=compress&cs=tinysrgb&w=400", // Bulk SMS Communication
+                "https://images.pexels.com/photos/8613097/pexels-photo-8613097.jpeg?auto=compress&cs=tinysrgb&w=400", // Student & Parent Directories
+                "https://images.pexels.com/photos/590016/pexels-photo-590016.jpg?auto=compress&cs=tinysrgb&w=400", // Data Import/Export
+                "https://images.pexels.com/photos/590022/pexels-photo-590022.jpg?auto=compress&cs=tinysrgb&w=400", // Analytics & Insights
+                "https://images.pexels.com/photos/60504/security-protection-anti-virus-software-60504.jpeg?auto=compress&cs=tinysrgb&w=400" // Secure & Reliable
+              ];
+              
               return (
                 <div key={index} className="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition-shadow border border-gray-100">
+                  <div className="mb-6">
+                    <img
+                      src={featureImages[index]}
+                      alt={feature.title}
+                      className="w-full h-48 object-cover rounded-lg mb-4"
+                    />
+                  </div>
                   <div className="bg-blue-100 p-3 rounded-lg w-fit mb-6">
                     <Icon className="h-6 w-6 text-blue-600" />
                   </div>
@@ -168,6 +184,18 @@ export const LandingPage = () => {
           <div className="grid md:grid-cols-3 gap-8">
             {steps.map((step, index) => (
               <div key={index} className="text-center relative">
+                <div className="mb-6">
+                  <img
+                    src={index === 0 
+                      ? "https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg?auto=compress&cs=tinysrgb&w=400"
+                      : index === 1 
+                      ? "https://images.pexels.com/photos/590020/pexels-photo-590020.jpg?auto=compress&cs=tinysrgb&w=400"
+                      : "https://images.pexels.com/photos/8613204/pexels-photo-8613204.jpeg?auto=compress&cs=tinysrgb&w=400"
+                    }
+                    alt={step.title}
+                    className="w-full h-40 object-cover rounded-lg mx-auto mb-4"
+                  />
+                </div>
                 <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white text-2xl font-bold w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
                   {step.number}
                 </div>
@@ -199,6 +227,18 @@ export const LandingPage = () => {
           <div className="grid md:grid-cols-3 gap-8">
             {testimonials.map((testimonial, index) => (
               <div key={index} className="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+                <div className="mb-6">
+                  <img
+                    src={index === 0 
+                      ? "https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=400"
+                      : index === 1 
+                      ? "https://images.pexels.com/photos/3184292/pexels-photo-3184292.jpeg?auto=compress&cs=tinysrgb&w=400"
+                      : "https://images.pexels.com/photos/3184317/pexels-photo-3184317.jpeg?auto=compress&cs=tinysrgb&w=400"
+                    }
+                    alt={`${testimonial.author} - ${testimonial.title}`}
+                    className="w-16 h-16 object-cover rounded-full mx-auto border-4 border-blue-100"
+                  />
+                </div>
                 <div className="flex mb-4">
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
@@ -245,12 +285,29 @@ export const LandingPage = () => {
       {/* Final CTA Section */}
       <section className="py-20 bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="mb-8">
+            <img
+              src="https://images.pexels.com/photos/8613092/pexels-photo-8613092.jpeg?auto=compress&cs=tinysrgb&w=800"
+              alt="Happy students and teachers in school environment"
+              className="w-full max-w-2xl mx-auto h-64 object-cover rounded-xl shadow-lg"
+            />
+          </div>
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
             Ready to Transform Your School Management?
           </h2>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
             Join hundreds of schools already using School Board to streamline operations, improve communication, and focus on what matters most - education.
           </p>
+          
+          {/* Hero Image */}
+          <div className="mt-12 mb-8">
+            <img
+              src="https://images.pexels.com/photos/8613089/pexels-photo-8613089.jpeg?auto=compress&cs=tinysrgb&w=1200"
+              alt="Students and teacher in a modern classroom setting"
+              className="w-full max-w-4xl mx-auto h-96 object-cover rounded-2xl shadow-2xl"
+            />
+          </div>
+          
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link
               to="/auth"
