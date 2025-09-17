@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quora - Online Learning Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .handwritten {
+            font-family: 'Caveat', cursive;
+        }
+        .floating-card {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .hero-bg {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        .play-button {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+        }
+        .course-card-active {
+            background: #1e40af;
+            color: white;
+        }
+        .wave-pattern {
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23e0e7ff' fill-opacity='0.3'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Top Bar -->
+    <div class="bg-gray-100 text-center py-2">
+        <span class="text-sm font-semibold text-gray-700 tracking-wider">TWOHABITS</span>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <h1 class="text-2xl font-bold text-blue-600">Quora.</h1>
+                </div>
+
+                <!-- Navigation -->
+                <nav class="hidden md:flex space-x-8">
+                    <a href="#" class="text-gray-600 hover:text-gray-900 font-medium">About</a>
+                    <a href="#" class="text-gray-600 hover:text-gray-900 font-medium">Courses</a>
+                    <a href="#" class="text-gray-600 hover:text-gray-900 font-medium">Pricing</a>
+                </nav>
+
+                <!-- Auth Buttons -->
+                <div class="flex items-center space-x-4">
+                    <a href="#" class="text-gray-600 hover:text-gray-900 font-medium">Sign in</a>
+                    <button class="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors">
+                        Sign up
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero-bg wave-pattern min-h-screen relative overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <!-- Left Content -->
+                <div class="space-y-8">
+                    <div class="handwritten text-pink-500 text-xl font-semibold">
+                        your e-learning partner
+                    </div>
+                    
+                    <h1 class="text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
+                        Online Learning Now<br>
+                        <span class="text-blue-600">In Your Fingertips</span>
+                    </h1>
+                    
+                    <p class="text-gray-600 text-lg leading-relaxed max-w-md">
+                        Quora is a online learning platform that offers various premium courses for your skill development.
+                    </p>
+                    
+                    <div class="flex items-center space-x-6">
+                        <button class="bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+                            Try now
+                        </button>
+                        <button class="play-button flex items-center space-x-3 px-6 py-3 rounded-lg font-medium text-gray-700 hover:bg-white transition-colors">
+                            <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                                <svg class="w-3 h-3 text-white ml-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/>
+                                </svg>
+                            </div>
+                            <span>Play Video</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Content with Floating Elements -->
+                <div class="relative">
+                    <!-- Main Image -->
+                    <div class="relative z-10">
+                        <img src="https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg?auto=compress&cs=tinysrgb&w=600" 
+                             alt="Happy woman with phone" 
+                             class="w-full max-w-md mx-auto rounded-2xl">
+                    </div>
+
+                    <!-- Floating Cards -->
+                    <!-- Students Count Card -->
+                    <div class="floating-card absolute top-4 left-4 p-4 rounded-xl z-20">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="font-bold text-gray-900">175K</div>
+                                <div class="text-sm text-gray-600">Assisted Students</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Congratulations Card -->
+                    <div class="floating-card absolute top-20 right-0 p-4 rounded-xl z-20 max-w-xs">
+                        <div class="flex items-start space-x-3">
+                            <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="font-semibold text-gray-900 text-sm">Congratulations!</div>
+                                <div class="text-xs text-gray-600">Your admission completed</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Graph Card -->
+                    <div class="floating-card absolute bottom-32 left-0 p-4 rounded-xl z-20">
+                        <div class="text-sm font-semibold text-gray-900 mb-2">Improvement</div>
+                        <div class="flex items-end space-x-1 h-8">
+                            <div class="w-2 bg-blue-300 h-4 rounded-sm"></div>
+                            <div class="w-2 bg-blue-400 h-6 rounded-sm"></div>
+                            <div class="w-2 bg-blue-500 h-8 rounded-sm"></div>
+                            <div class="w-2 bg-blue-600 h-5 rounded-sm"></div>
+                        </div>
+                    </div>
+
+                    <!-- Art Class Card -->
+                    <div class="floating-card absolute bottom-4 right-4 p-4 rounded-xl z-20 max-w-xs">
+                        <div class="flex items-center space-x-3">
+                            <img src="https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=100" 
+                                 alt="Instructor" 
+                                 class="w-10 h-10 rounded-full object-cover">
+                            <div>
+                                <div class="font-semibold text-gray-900 text-sm">Art and media Class</div>
+                                <div class="text-xs text-gray-600">Tomorrow at 12:00 PM</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Decorative Wave -->
+                    <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 z-0">
+                        <svg width="200" height="60" viewBox="0 0 200 60" class="text-blue-200">
+                            <path d="M0,30 Q50,10 100,30 T200,30" stroke="currentColor" stroke-width="2" fill="none"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Partners Section -->
+    <section class="bg-white py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-900 mb-4">
+                        Over 500 plus<br>
+                        courses in one place
+                    </h2>
+                </div>
+                <div class="flex items-center justify-center space-x-8 opacity-60">
+                    <!-- Coursera Logo -->
+                    <div class="text-2xl font-bold text-blue-600">coursera</div>
+                    <!-- Skillshare Logo -->
+                    <div class="text-2xl font-bold text-gray-700">SKILLSHARE</div>
+                    <!-- Udemy Logo -->
+                    <div class="text-2xl font-bold text-purple-600">Udemy</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Popular Courses Section -->
+    <section class="bg-gray-50 py-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-4xl font-bold text-center text-gray-900 mb-16">Our Popular Courses</h2>
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-5 gap-6">
+                <!-- UI Design Basics -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow text-center">
+                    <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"/>
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-gray-900">UI design<br>Basics</h3>
+                </div>
+
+                <!-- Business Marketing (Active) -->
+                <div class="course-card-active p-6 rounded-2xl shadow-sm text-center">
+                    <div class="w-16 h-16 bg-white bg-opacity-20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-white">Business<br>Marketing</h3>
+                </div>
+
+                <!-- Website Development -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow text-center">
+                    <div class="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-gray-900">Website<br>Development</h3>
+                </div>
+
+                <!-- Article Writing -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow text-center">
+                    <div class="w-16 h-16 bg-yellow-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-gray-900">Article<br>Writing</h3>
+                </div>
+
+                <!-- Storage Management -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow text-center">
+                    <div class="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-gray-900">Storage<br>Management</h3>
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+</html>
