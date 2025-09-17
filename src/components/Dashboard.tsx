@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../hooks/useAuth';
+import { PermissionGate } from './PermissionGate';
+import { AddStaffModal } from './AddStaffModal';
 import { 
   Users, 
   GraduationCap, 
@@ -11,18 +13,20 @@ import {
   Upload,
   TrendingUp,
   Clock,
-  AlertCircle
+  AlertCircle,
+  Shield
 } from 'lucide-react';
 import Papa from 'papaparse';
 
 export const Dashboard = () => {
-  const { schoolId, schoolName } = useAuth();
+  const { schoolId, schoolName, userProfile } = useAuth();
   const [stats, setStats] = useState({
     totalParents: 0,
     totalStudents: 0,
     recentOnboardings: [] as any[]
   });
   const [loading, setLoading] = useState(true);
+  const [showAddStaffModal, setShowAddStaffModal] = useState(false);
 
   useEffect(() => {
     loadStats();
@@ -121,34 +125,7 @@ export const Dashboard = () => {
     }
   };
 
-  // If no school ID is available, show informative message
-  if (!loading && !schoolId) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-yellow-50">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-            <div className="bg-yellow-100 p-4 rounded-full w-16 h-16 mx-auto mb-6">
-              <AlertCircle className="h-8 w-8 text-yellow-600 mx-auto" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">School Information Missing</h2>
-            <p className="text-gray-600 mb-6">
-              Your account is not associated with a school. Please contact your administrator 
-              to set up your school profile.
-            </p>
-            <div className="space-y-4">
-              <p className="text-sm text-gray-500">
-                If you're an administrator, you may need to:
-              </p>
-              <ul className="text-sm text-gray-500 list-disc list-inside space-y-1">
-                <li>Add a school to your Supabase database</li>
-                <li>Associate your user profile with a school</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Allow page to render even if schoolId is missing, showing zeros/empty states
 
   if (loading) {
     return (
@@ -264,6 +241,20 @@ export const Dashboard = () => {
               <Upload className="h-6 w-6 text-indigo-600" />
               <span className="font-medium text-indigo-700">Import Data</span>
             </Link>
+
+            <PermissionGate 
+              userRole={userProfile?.role || 'staff'} 
+              permission="staff:add"
+              showRestrictedMessage={false}
+            >
+              <button
+                onClick={() => setShowAddStaffModal(true)}
+                className="flex items-center space-x-3 p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors border border-orange-200"
+              >
+                <Shield className="h-6 w-6 text-orange-600" />
+                <span className="font-medium text-orange-700">Add Staff</span>
+              </button>
+            </PermissionGate>
           </div>
         </div>
 
@@ -304,6 +295,18 @@ export const Dashboard = () => {
           )}
         </div>
       </div>
+
+      {/* Add Staff Modal */}
+      <AddStaffModal
+        isOpen={showAddStaffModal}
+        onClose={() => setShowAddStaffModal(false)}
+        schoolId={schoolId || ''}
+        invitedBy={userProfile?.id || ''}
+        onStaffAdded={() => {
+          // Optionally refresh stats or show success message
+          setShowAddStaffModal(false);
+        }}
+      />
     </div>
   );
 };

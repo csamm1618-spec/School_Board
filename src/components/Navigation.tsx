@@ -1,6 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { PermissionGate } from './PermissionGate';
 import { 
   Home, 
   UserPlus, 
@@ -11,11 +10,12 @@ import {
   Settings,
   LogOut,
   School,
-  Shield
+  Shield,
+  BarChart3
 } from 'lucide-react';
 
 export const Navigation = () => {
-  const { user, schoolName, signOut } = useAuth();
+  const { user, schoolName, signOut, userRole, userProfile } = useAuth();
   const location = useLocation();
 
   const navItems = [
@@ -28,9 +28,10 @@ export const Navigation = () => {
     { name: 'Settings', path: '/settings', icon: Settings },
   ];
 
-  // Add Staff Management for owners only
+  // Add Staff Management and Permissions Matrix for owners only
   if (userRole === 'owner') {
     navItems.push({ name: 'Staff', path: '/staff', icon: Shield });
+    navItems.push({ name: 'Permissions', path: '/permissions', icon: BarChart3 });
   }
 
   if (!user) {
@@ -49,15 +50,6 @@ export const Navigation = () => {
   >
     Login
   </Link>
-
-  <a
-    href="https://forms.gle/H6zF6gHpwS1Dv53Z6"
-    target="_blank"
-    rel="noopener noreferrer"
-    className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition-colors"
-  >
-    Give Feedback
-  </a>
 </div>
 
           </div>
@@ -117,15 +109,6 @@ export const Navigation = () => {
     <LogOut className="h-4 w-4" />
     <span className="text-sm font-medium">Logout</span>
   </button>
-
-  <a
-    href="https://forms.gle/H6zF6gHpwS1Dv53Z6"
-    target="_blank"
-    rel="noopener noreferrer"
-    className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition-colors"
-  >
-    Give Feedback
-  </a>
 </div>
 
         </div>

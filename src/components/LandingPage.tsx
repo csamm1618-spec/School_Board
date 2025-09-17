@@ -374,7 +374,7 @@ export const LandingPage = () => {
               <ul className="space-y-2 text-gray-400">
                 <li><a href="#" className="hover:text-white transition-colors">Help Center</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Documentation</a></li>
-                <li><a href="https://forms.gle/H6zF6gHpwS1Dv53Z6" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Give Feedback</a></li>
+                
                 <li><a href="#" className="hover:text-white transition-colors">Status</a></li>
               </ul>
             </div>

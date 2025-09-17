@@ -1,17 +1,19 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Debug: Check if environment variables are loaded
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase environment variables:', {
-    VITE_SUPABASE_URL: supabaseUrl,
-    VITE_SUPABASE_ANON_KEY: supabaseAnonKey ? 'Present' : 'Missing'
-  });
+// Fail fast if environment variables are missing
+const missingVars = [];
+if (!supabaseUrl) missingVars.push('VITE_SUPABASE_URL');
+if (!supabaseAnonKey) missingVars.push('VITE_SUPABASE_ANON_KEY');
+
+if (missingVars.length > 0) {
+  throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Create Supabase client
+export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey);
 
 export interface School {
   id: string;
@@ -28,9 +30,14 @@ export interface UserProfile {
   user_id: string;
   school_id: string;
   profile_name?: string;
+  email?: string;
   role: Role;
   created_at: string;
   school?: School;
+  invite_token?: string;
+  status: 'pending' | 'active' | 'suspended';
+  invited_by?: string;
+  invited_at?: string;
 }
 
 export interface Parent {
@@ -66,15 +73,20 @@ export interface ParentStudent {
 }
 
 // Helper function to get user's school info
-export const getUserSchoolInfo = async (userId: string) => {
-  const { data, error } = await supabase
+export const getUserSchoolInfo = async (userId: string, signal?: AbortSignal) => {
+  let query = supabase
     .from('user_profiles')
     .select(`
       *,
       school:schools(*)
     `)
-    .eq('user_id', userId)
-    .maybeSingle();
+    .eq('user_id', userId);
+
+  if (signal) {
+    query = query.abortSignal(signal);
+  }
+
+  const { data, error } = await query.maybeSingle();
 
   if (error && error.code !== 'PGRST116') throw error;
   return data;
@@ -98,6 +110,118 @@ export const getSchools = async () => {
     .from('schools')
     .select('*')
     .order('name');
+
+  if (error) throw error;
+  return data;
+};
+
+// Helper function to create a staff invite
+export const createStaffInvite = async (
+  schoolId: string, 
+  staffName: string, 
+  staffEmail: string, 
+  invitedBy: string
+) => {
+  const { generateInviteToken } = await import('../utils/inviteTokens');
+  const inviteToken = generateInviteToken();
+  
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .insert({
+      school_id: schoolId,
+      profile_name: staffName,
+      email: staffEmail,
+      role: 'staff',
+      invite_token: inviteToken,
+      status: 'pending',
+      invited_by: invitedBy,
+      invited_at: new Date().toISOString()
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+// Helper function to get staff invite by token
+export const getStaffInviteByToken = async (token: string) => {
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .select(`
+      *,
+      school:schools(*)
+    `)
+    .eq('invite_token', token)
+    .eq('status', 'pending')
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+};
+
+// Helper function to accept staff invite
+export const acceptStaffInvite = async (token: string, userId: string) => {
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .update({
+      user_id: userId,
+      status: 'active',
+      invite_token: null
+    })
+    .eq('invite_token', token)
+    .eq('status', 'pending')
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+// Helper function to get all staff for a school
+export const getSchoolStaff = async (schoolId: string) => {
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .select(`
+      *,
+      school:schools(*),
+      invited_by_profile:user_profiles!invited_by(profile_name, role)
+    `)
+    .eq('school_id', schoolId)
+    .in('role', ['staff'])
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data;
+};
+
+// Helper function to update staff status
+export const updateStaffStatus = async (profileId: string, status: 'active' | 'suspended') => {
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .update({ status })
+    .eq('id', profileId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+// Helper function to resend invite (generate new token)
+export const resendStaffInvite = async (profileId: string) => {
+  const { generateInviteToken } = await import('../utils/inviteTokens');
+  const newToken = generateInviteToken();
+  
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .update({
+      invite_token: newToken,
+      invited_at: new Date().toISOString()
+    })
+    .eq('id', profileId)
+    .select()
+    .single();
 
   if (error) throw error;
   return data;

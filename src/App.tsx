@@ -10,6 +10,8 @@ import { BulkSMSPage } from './components/BulkSMSPage';
 import { DataImportPage } from './components/DataImportPage';
 import { SettingsPage } from './components/SettingsPage';
 import { RoleManagementPage } from './components/RoleManagementPage';
+import { StaffManagementPage } from './components/StaffManagementPage';
+import { InvitePage } from './components/InvitePage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { EnvironmentCheck } from './components/EnvironmentCheck';
 import { useAuth } from './hooks/useAuth';
@@ -103,10 +105,21 @@ function App() {
             path="/staff"
             element={
               <ProtectedRoute>
+                <StaffManagementPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/permissions"
+            element={
+              <ProtectedRoute>
                 <RoleManagementPage />
               </ProtectedRoute>
             }
           />
+          
+          {/* Public invite route */}
+          <Route path="/invite/:token" element={<InvitePage />} />
           
           {/* Redirect root based on auth status */}
           <Route
