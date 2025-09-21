@@ -3,17 +3,46 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Fail fast if environment variables are missing
-const missingVars = [];
+const missingVars: string[] = [];
 if (!supabaseUrl) missingVars.push('VITE_SUPABASE_URL');
 if (!supabaseAnonKey) missingVars.push('VITE_SUPABASE_ANON_KEY');
 
-if (missingVars.length > 0) {
-  throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
+export const isSupabaseConfigured = missingVars.length === 0;
+
+if (!isSupabaseConfigured) {
+  console.warn(
+    `Supabase environment variables missing: ${missingVars.join(
+      ', '
+    )}. The application will run in a limited mode until they are provided.`
+  );
 }
 
-// Create Supabase client
-export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+let supabaseInstance: SupabaseClient | null = null;
+
+const createSupabaseClient = (): SupabaseClient => {
+  if (!isSupabaseConfigured || !supabaseUrl || !supabaseAnonKey) {
+    throw new Error(
+      `Supabase client requested before environment was configured. Missing: ${missingVars.join(', ')}`
+    );
+  }
+
+  if (!supabaseInstance) {
+    supabaseInstance = createClient(supabaseUrl, supabaseAnonKey);
+  }
+
+  return supabaseInstance;
+};
+
+export const getSupabaseClient = (): SupabaseClient => createSupabaseClient();
+
+// Proxy to lazily instantiate the client while keeping existing import sites unchanged.
+export const supabase: SupabaseClient = new Proxy({} as SupabaseClient, {
+  get(_target, prop) {
+    const client = createSupabaseClient();
+    const value = (client as any)[prop as keyof SupabaseClient];
+    return typeof value === 'function' ? value.bind(client) : value;
+  },
+});
 
 export interface School {
   id: string;
