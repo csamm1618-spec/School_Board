@@ -1,22 +1,37 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User } from '@supabase/supabase-js';
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
-import { supabase, getUserSchoolInfo, UserProfile } from '../lib/supabaseClient';
+import { supabase, getUserSchoolInfo, UserProfile, isSupabaseConfigured } from '../lib/supabaseClient';
 
 // Debug utility that only logs in development
 const debugLog = (...args: any[]) => {
-  if (process.env.NODE_ENV === 'development') {
+  if (import.meta.env.DEV) {
     console.log(...args);
   }
 };
 
 const debugError = (...args: any[]) => {
-  if (process.env.NODE_ENV === 'development') {
+  if (import.meta.env.DEV) {
     console.error(...args);
   }
 };
 
-export const useAuth = () => {
+type AuthContextValue = {
+  user: User | null;
+  userProfile: UserProfile | null;
+  schoolId: string | undefined;
+  schoolName: string | undefined;
+  schoolLogoUrl: string | undefined;
+  profileName: string | undefined;
+  userRole: 'owner' | 'staff';
+  loading: boolean;
+  signOut: () => Promise<void>;
+  refetchUserProfile: () => Promise<void>;
+};
+
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+
+const useProvideAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -25,7 +40,7 @@ export const useAuth = () => {
   useEffect(() => {
     const fallbackTimeout = setTimeout(() => {
       if (loading) {
-        debugError('⚠️ Loading timeout - forcing loading to false');
+        debugError('Loading timeout - forcing loading to false');
         setLoading(false);
       }
     }, 15000); // 15 second fallback
@@ -33,22 +48,29 @@ export const useAuth = () => {
     return () => clearTimeout(fallbackTimeout);
   }, [loading]);
 
-  useEffect(() => {
-    const initializeAuth = async () => {
+    useEffect(() => {
+      // If Supabase isn't configured, expose a safe, non-authenticated state and exit early
+      if (!isSupabaseConfigured) {
+        debugError('Supabase not configured. Skipping auth initialization.');
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+      const initializeAuth = async () => {
       try {
-        debugLog('🔍 Initializing auth...');
+        debugLog('Initializing auth...');
         // Get initial session
         const { data: { session } } = await supabase.auth.getSession();
-        debugLog('📱 Session:', session ? 'Found' : 'None');
+        debugLog('Session:', session ? 'Found' : 'None');
         setUser(session?.user ?? null);
         if (session?.user) {
-          debugLog('👤 Loading user profile for:', session.user.id);
+          debugLog('Loading user profile for:', session.user.id);
           await loadUserProfile(session.user.id);
         }
       } catch (error) {
-        debugError('❌ Error initializing auth:', error);
+        debugError('Error initializing auth:', error);
       } finally {
-        debugLog('✅ Auth initialization complete');
+        debugLog('Auth initialization complete');
         setLoading(false);
       }
     };
@@ -59,7 +81,7 @@ export const useAuth = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event: AuthChangeEvent, session: Session | null) => {
         try {
-          debugLog('🔄 Auth state changed:', _event, session ? 'Session found' : 'No session');
+          debugLog('Auth state changed:', _event, session ? 'Session found' : 'No session');
           setLoading(true);
           setUser(session?.user ?? null);
           if (session?.user) {
@@ -68,7 +90,7 @@ export const useAuth = () => {
             setUserProfile(null);
           }
         } catch (error) {
-          debugError('❌ Error in auth state change:', error);
+          debugError('Error in auth state change:', error);
           setUserProfile(null);
         } finally {
           setLoading(false);
@@ -79,21 +101,26 @@ export const useAuth = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const loadUserProfile = async (userId: string) => {
+    const loadUserProfile = async (userId: string) => {
+      if (!isSupabaseConfigured) {
+        debugError('Supabase not configured. Skipping profile load.');
+        setUserProfile(null);
+        return;
+      }
     const abortController = new AbortController();
-    let timeoutId: NodeJS.Timeout | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
     try {
-      debugLog('👤 Loading profile for user:', userId);
+      debugLog('Loading profile for user:', userId);
       
       // Set up timeout with AbortController for proper cancellation
       timeoutId = setTimeout(() => {
-        debugError('⏰ Profile loading timed out after 10 seconds');
+        debugError('Profile loading timed out after 10 seconds');
         abortController.abort();
       }, 10000); // Increased timeout to 10 seconds
       
       const profile = await getUserSchoolInfo(userId, abortController.signal);
-      debugLog('📋 Profile loaded:', profile ? 'Found' : 'None');
+      debugLog('Profile loaded:', profile ? 'Found' : 'None');
 
       // Clear timeout since request completed successfully
       if (timeoutId) {
@@ -118,9 +145,9 @@ export const useAuth = () => {
       }
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
-        debugError('⏰ Profile loading timed out');
+        debugError('Profile loading timed out');
       } else {
-        debugError('❌ Error loading user profile:', error);
+        debugError('Error loading user profile:', error);
       }
       
       // Don't set a default profile with empty school_id - let it be null
@@ -134,27 +161,50 @@ export const useAuth = () => {
     }
   };
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
-    setUserProfile(null);
-  };
+    const signOut = async () => {
+try {
+if (isSupabaseConfigured) {
+await supabase.auth.signOut();
+}
+} catch (e) {
+if (import.meta.env.DEV) console.error('Sign out failed:', e);
+} finally {
+// Clear local state immediately so UI updates at once
+setUser(null);
+setUserProfile(null);
+}
+};
 
-  const refetchUserProfile = async () => {
-    if (user) {
-      await loadUserProfile(user.id);
-    }
-  };
+    const refetchUserProfile = async () => {
+      if (!isSupabaseConfigured) return;
+      if (user) {
+        await loadUserProfile(user.id);
+      }
+    };
 
-  return { 
-    user, 
-    userProfile, 
+  return {
+    user,
+    userProfile,
     schoolId: userProfile?.school_id,
     schoolName: userProfile?.school?.name,
     schoolLogoUrl: userProfile?.school?.logo_url,
     profileName: userProfile?.profile_name,
-    userRole: userProfile?.role || 'staff',
-    loading, 
+    userRole: (userProfile?.role as 'owner' | 'staff') || 'staff',
+    loading,
     signOut,
-    refetchUserProfile
-  };
+    refetchUserProfile,
+  } as AuthContextValue;
+};
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const value = useProvideAuth();
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+
+export const useAuth = () => {
+  const ctx = useContext(AuthContext);
+  if (ctx === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return ctx;
 };

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase, sendWelcomeSMS } from '../lib/supabaseClient';
+import { supabase, sendWelcomeSMSStrict as sendWelcomeSMS } from '../lib/supabaseClient';
 import { useAuth } from '../hooks/useAuth';
 import { UserPlus, Users, GraduationCap, Phone, Mail, User, Calendar } from 'lucide-react';
 

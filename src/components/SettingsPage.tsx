@@ -1,8 +1,7 @@
-import { useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { useState, useEffect } from 'react';
+import { supabase, createSchool, createUserProfile } from '../lib/supabaseClient';
 import { useAuth } from '../hooks/useAuth';
 import { 
-  Settings as SettingsIcon, 
   School, 
   Save, 
   User, 
@@ -13,13 +12,12 @@ import {
   Eye,
   EyeOff,
   Upload,
-  Image as ImageIcon,
   X
 } from 'lucide-react';
 import { uploadSchoolLogo, updateSchoolLogo } from '../lib/supabaseClient';
 
 export const SettingsPage = () => {
-  const { user, schoolId, schoolName, refetchUserProfile } = useAuth();
+  const { user, userRole, schoolId, schoolName, schoolLogoUrl, refetchUserProfile } = useAuth();
   const [schoolNameInput, setSchoolNameInput] = useState(schoolName || '');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -31,15 +29,89 @@ export const SettingsPage = () => {
   const [logoLoading, setLogoLoading] = useState(false);
   const [currentLogoUrl, setCurrentLogoUrl] = useState<string | null>(null);
 
+  // Initialize current logo from profile when available/changes
+  useEffect(() => {
+    setCurrentLogoUrl(schoolLogoUrl || null);
+  }, [schoolLogoUrl]);
+
   // Password change states
   const [showPasswordSection, setShowPasswordSection] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState('');
+  // Removed currentPassword; Supabase updates the password for the current session.
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  // Removed current password visibility toggle
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
+
+  // Self-provision states when no school exists
+  const [newSchoolName, setNewSchoolName] = useState('');
+  const [newSchoolLocation, setNewSchoolLocation] = useState('');
+  const [newSchoolLogoFile, setNewSchoolLogoFile] = useState<File | null>(null);
+  const [provisionLoading, setProvisionLoading] = useState(false);
+
+  const handleSelfProvisionSchool = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) {
+      setMessage('You must be signed in to create a school');
+      setMessageType('error');
+      return;
+    }
+    if (!newSchoolName.trim() || !newSchoolLocation.trim()) {
+      setMessage('Please provide a school name and location');
+      setMessageType('error');
+      return;
+    }
+    setProvisionLoading(true);
+    setMessage('');
+    setMessageType('');
+    try {
+      const school = await createSchool(newSchoolName.trim(), newSchoolLocation.trim());
+      // Try to link existing profile first
+      const { data: upd, error: updErr } = await supabase
+        .from('user_profiles')
+        .update({ school_id: school.id, role: 'owner' })
+        .eq('user_id', user.id)
+        .select('id')
+        .maybeSingle();
+
+      if (updErr) throw updErr;
+
+      if (!upd) {
+        // No existing profile row, create one
+        await createUserProfile(user.id, school.id, newSchoolName.trim(), 'owner');
+      }
+
+      // Optionally upload logo if provided
+      if (newSchoolLogoFile) {
+        try {
+          const logoUrl = await uploadSchoolLogo(school.id, newSchoolLogoFile);
+          await updateSchoolLogo(school.id, logoUrl);
+        } catch (logoErr: any) {
+          // Non-fatal: proceed but show message
+          console.error('Logo upload during provisioning failed:', logoErr);
+          setMessage(`School created, but logo upload failed: ${logoErr.message || String(logoErr)}`);
+          setMessageType('error');
+        }
+      }
+
+      await refetchUserProfile();
+      setMessage('School created and linked successfully!');
+      setMessageType('success');
+      setNewSchoolName('');
+      setNewSchoolLocation('');
+      setNewSchoolLogoFile(null);
+    } catch (err: any) {
+      setMessage(`Failed to create school: ${err.message || String(err)}`);
+      setMessageType('error');
+    } finally {
+      setProvisionLoading(false);
+      setTimeout(() => {
+        setMessage('');
+        setMessageType('');
+      }, 5000);
+    }
+  };
 
   const handleUpdateSchoolName = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,8 +159,8 @@ export const SettingsPage = () => {
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      setMessage('All password fields are required');
+    if (!newPassword || !confirmPassword) {
+      setMessage('New password and confirmation are required');
       setMessageType('error');
       return;
     }
@@ -118,7 +190,6 @@ export const SettingsPage = () => {
 
       setMessage('Password updated successfully!');
       setMessageType('success');
-      setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
       setShowPasswordSection(false);
@@ -247,20 +318,108 @@ export const SettingsPage = () => {
     }
   };
 
-  // If no school ID is available, show informative message
+  // If no school ID is available, show self-provision for owners, info for staff
   if (!schoolId) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-yellow-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-            <div className="bg-yellow-100 p-4 rounded-full w-16 h-16 mx-auto mb-6">
-              <AlertCircle className="h-8 w-8 text-yellow-600 mx-auto" />
+          {message && (
+            <div className={`rounded-xl shadow-lg p-4 mb-6 ${
+              messageType === 'success'
+                ? 'bg-green-50 border border-green-200'
+                : 'bg-red-50 border border-red-200'
+            }`}>
+              <div className="flex items-center space-x-3">
+                {messageType === 'success' ? (
+                  <CheckCircle className="h-6 w-6 text-green-600" />
+                ) : (
+                  <AlertCircle className="h-6 w-6 text-red-600" />
+                )}
+                <p className={`font-medium ${
+                  messageType === 'success' ? 'text-green-800' : 'text-red-800'
+                }`}>
+                  {message}
+                </p>
+              </div>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">School Information Missing</h2>
-            <p className="text-gray-600 mb-6">
-              Your account is not associated with a school. Please contact your administrator 
-              to set up your school profile.
-            </p>
+          )}
+
+          <div className="bg-white rounded-xl shadow-lg p-8">
+            <div className="flex items-center space-x-3 mb-6">
+              <div className="bg-yellow-100 p-3 rounded-lg">
+                <School className="h-6 w-6 text-yellow-600" />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">School Setup</h2>
+                <p className="text-gray-600">{userRole === 'owner' ? 'Create your school to get started' : 'Your account is not yet linked to a school.'}</p>
+              </div>
+            </div>
+
+            {userRole === 'owner' ? (
+              <form onSubmit={handleSelfProvisionSchool} className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">School Name</label>
+                  <input
+                    type="text"
+                    value={newSchoolName}
+                    onChange={(e) => setNewSchoolName(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter school name"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">School Location</label>
+                  <input
+                    type="text"
+                    value={newSchoolLocation}
+                    onChange={(e) => setNewSchoolLocation(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="e.g., City, State"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">School Logo (optional)</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setNewSchoolLogoFile(e.target.files?.[0] || null)}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 5MB</p>
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={provisionLoading || !newSchoolName.trim() || !newSchoolLocation.trim()}
+                    className="flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {provisionLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                        <span>Creating...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-5 w-5" />
+                        <span>Create School</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="text-center">
+                <div className="bg-yellow-100 p-4 rounded-full w-16 h-16 mx-auto mb-6">
+                  <AlertCircle className="h-8 w-8 text-yellow-600 mx-auto" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">School Information Missing</h3>
+                <p className="text-gray-600">
+                  Your account is not associated with a school yet. Please contact your administrator to link your account, or ask them to send you a staff invite.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -496,28 +655,6 @@ export const SettingsPage = () => {
 
             {showPasswordSection && (
               <form onSubmit={handlePasswordChange} className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Current Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showCurrentPassword ? 'text' : 'password'}
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      placeholder="Enter current password"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                      className="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600"
-                    >
-                      {showCurrentPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                    </button>
-                  </div>
-                </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -570,7 +707,6 @@ export const SettingsPage = () => {
                     type="button"
                     onClick={() => {
                       setShowPasswordSection(false);
-                      setCurrentPassword('');
                       setNewPassword('');
                       setConfirmPassword('');
                     }}
@@ -580,7 +716,7 @@ export const SettingsPage = () => {
                   </button>
                   <button
                     type="submit"
-                    disabled={passwordLoading || !currentPassword || !newPassword || !confirmPassword}
+                    disabled={passwordLoading || !newPassword || !confirmPassword}
                     className="flex items-center space-x-2 bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     {passwordLoading ? (

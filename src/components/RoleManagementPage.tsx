@@ -57,12 +57,12 @@ export const RoleManagementPage = () => {
     }
   };
 
-  const updateUserRole = async (userId: string, newRole: Role) => {
+  const updateUserRole = async (profileId: string, newRole: Role) => {
     try {
       const { error } = await supabase
         .from('user_profiles')
         .update({ role: newRole })
-        .eq('user_id', userId);
+        .eq('id', profileId);
 
       if (error) throw error;
 
@@ -73,14 +73,14 @@ export const RoleManagementPage = () => {
     }
   };
 
-  const removeStaff = async (userId: string) => {
+  const removeStaff = async (profileId: string) => {
     if (!confirm('Are you sure you want to remove this staff member?')) return;
 
     try {
       const { error } = await supabase
         .from('user_profiles')
         .delete()
-        .eq('user_id', userId);
+        .eq('id', profileId);
 
       if (error) throw error;
 
@@ -176,7 +176,7 @@ export const RoleManagementPage = () => {
                           <div className="flex space-x-2">
                             <select
                               value={member.role}
-                              onChange={(e) => updateUserRole(member.user_id, e.target.value as Role)}
+                              onChange={(e) => updateUserRole(member.id, e.target.value as Role)}
                               className="text-sm border border-gray-300 rounded px-2 py-1"
                             >
                               <option value="owner">Owner/Admin</option>
@@ -184,7 +184,7 @@ export const RoleManagementPage = () => {
                             </select>
                             <PermissionGate userRole={userRole} permission="staff:remove">
                               <button
-                                onClick={() => removeStaff(member.user_id)}
+                                onClick={() => removeStaff(member.id)}
                                 className="text-red-600 hover:text-red-900"
                               >
                                 <Trash2 className="h-4 w-4" />

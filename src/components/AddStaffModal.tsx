@@ -19,6 +19,7 @@ export const AddStaffModal = ({ isOpen, onClose, schoolId, invitedBy, onStaffAdd
   const [messageType, setMessageType] = useState<'success' | 'error' | ''>('');
   const [inviteLink, setInviteLink] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
+  const [lastInvitedName, setLastInvitedName] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,7 +53,7 @@ export const AddStaffModal = ({ isOpen, onClose, schoolId, invitedBy, onStaffAdd
       }
       
       const link = createInviteLink(staffInvite.invite_token);
-      
+      setLastInvitedName(staffName.trim());
       setInviteLink(link);
       setShowSuccess(true);
       setMessage('Staff invite created successfully!');
@@ -123,7 +124,7 @@ export const AddStaffModal = ({ isOpen, onClose, schoolId, invitedBy, onStaffAdd
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Invite Created!</h3>
               <p className="text-gray-600 mb-4">
-                Share this link with <strong>{staffName}</strong> to complete their signup:
+                Share this link with <strong>{lastInvitedName || staffName}</strong> to complete their signup:
               </p>
               
               <div className="bg-gray-50 rounded-lg p-4 mb-4">

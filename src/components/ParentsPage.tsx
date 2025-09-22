@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../hooks/useAuth';
-import { Search, Download, Users, Phone, Mail, AlertCircle } from 'lucide-react';
+import { Search, Download, Users, Phone, Mail } from 'lucide-react';
 import Papa from 'papaparse';
 
 export const ParentsPage = () => {
@@ -13,7 +13,7 @@ export const ParentsPage = () => {
 
   useEffect(() => {
     loadParents();
-  }, []);
+  }, [schoolId]);
 
   useEffect(() => {
     filterParents();
@@ -24,7 +24,7 @@ export const ParentsPage = () => {
       setLoading(false);
       return;
     }
-    
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from('parents')
@@ -219,7 +219,7 @@ export const ParentsPage = () => {
                         {parent.parent_student.map((ps: any, index: number) => (
                           <div key={ps.id} className="flex items-center space-x-2">
                             {index > 0 && <span className="text-gray-400">â€¢</span>}
-                            <span>{ps.student?.student_name}</span>
+                            {index > 0 && <span className="text-gray-400">•</span>}
                             <span className="text-xs text-gray-500">({ps.student?.grade})</span>
                           </div>
                         ))}
@@ -244,3 +244,4 @@ export const ParentsPage = () => {
     </div>
   );
 };
+

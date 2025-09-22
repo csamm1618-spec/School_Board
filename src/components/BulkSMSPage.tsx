@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase, sendBulkSMS } from '../lib/supabaseClient';
+import { supabase, sendBulkSMSStrict as sendBulkSMS } from '../lib/supabaseClient';
 import { useAuth } from '../hooks/useAuth';
 import { MessageSquare, Users, Send, CheckCircle, AlertCircle } from 'lucide-react';
 
@@ -17,11 +17,15 @@ export const BulkSMSPage = () => {
 
   useEffect(() => {
     loadParents();
-  }, []);
+  }, [schoolId]);
 
   const loadParents = async () => {
-    if (!schoolId) return;
-    
+    if (!schoolId) {
+      setParents([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from('parents')
@@ -39,6 +43,8 @@ export const BulkSMSPage = () => {
       setParents(data || []);
     } catch (error) {
       console.error('Error loading parents:', error);
+    } finally {
+      setLoading(false);
     }
   };
 

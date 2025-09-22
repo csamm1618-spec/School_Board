@@ -9,7 +9,6 @@ import {
   ArrowRight,
   Star,
   Shield,
-  Clock,
   BarChart3
 } from 'lucide-react';
 
@@ -118,10 +117,10 @@ export const LandingPage = () => {
               </button>
             </div>
             <p className="text-sm text-gray-500 mt-4">
-              ✨ No credit card required • Set up in under 5 minutes
+              No credit card required - Set up in under 5 minutes
             </p>
-          </div>
         </div>
+          </div>
       </section>
 
       {/* Features Section */}
@@ -387,3 +386,6 @@ export const LandingPage = () => {
     </div>
   );
 };
+
+
+

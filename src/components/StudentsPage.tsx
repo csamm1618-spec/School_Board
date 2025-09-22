@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../hooks/useAuth';
-import { Search, Download, GraduationCap, Calendar, Users, AlertCircle, ArrowUp, CheckCircle, XCircle } from 'lucide-react';
+import { Search, Download, GraduationCap, Calendar, Users, ArrowUp, CheckCircle, XCircle } from 'lucide-react';
 import Papa from 'papaparse';
 
 export const StudentsPage = () => {
@@ -21,7 +21,7 @@ export const StudentsPage = () => {
 
   useEffect(() => {
     loadStudents();
-  }, []);
+  }, [schoolId]);
 
   useEffect(() => {
     filterStudents();
@@ -32,7 +32,7 @@ export const StudentsPage = () => {
       setLoading(false);
       return;
     }
-    
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from('students')
@@ -431,3 +431,4 @@ export const StudentsPage = () => {
     </div>
   );
 };
+

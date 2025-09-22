@@ -355,3 +355,40 @@ export const sendBulkSMS = async (phoneNumbers: string[], message: string) => {
     throw error;
   }
 };
+
+// Strict variants that treat non-2xx responses as failures and avoid mojibake
+export const sendWelcomeSMSStrict = async (parentName: string, phoneNumber: string) => {
+  const message = `Welcome to our school, ${parentName}! Thank you for onboarding. We're excited to have your family as part of our school community.`;
+  const response = await fetch(`${supabaseUrl}/functions/v1/send-sms`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${supabaseAnonKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ to: phoneNumber, message, type: 'welcome', parentName })
+  });
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    throw new Error(`SMS gateway responded with ${response.status}: ${text}`);
+  }
+  return response.json().catch(() => ({}));
+};
+
+export const sendBulkSMSStrict = async (phoneNumbers: string[], message: string) => {
+  const promises = phoneNumbers.map(async (to) => {
+    const response = await fetch(`${supabaseUrl}/functions/v1/send-sms`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${supabaseAnonKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ to, message, type: 'bulk' })
+    });
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      throw new Error(`SMS gateway responded with ${response.status}: ${text}`);
+    }
+    return response.json().catch(() => ({}));
+  });
+  return Promise.allSettled(promises);
+};

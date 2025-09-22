@@ -39,6 +39,8 @@ export const DataImportPage = () => {
   const { schoolId } = useAuth();
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const [processed, setProcessed] = useState(0);
+  const [total, setTotal] = useState(0);
   const [results, setResults] = useState<ImportResult[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [dragActive, setDragActive] = useState(false);
@@ -124,109 +126,197 @@ export const DataImportPage = () => {
         setLoading(false);
         return;
       }
+      const rows = parsed.data;
+      setTotal(rows.length);
+      setProcessed(0);
 
-      for (let i = 0; i < parsed.data.length; i++) {
-        const row = parsed.data[i];
-        const result: ImportResult = {
+      // Normalize rows and pre‑validate
+      const normalized = rows.map((r) => ({
+        parent_name: (r.parent_name || '').trim(),
+        parent_phone_number: (r.parent_phone_number || '').trim(),
+        parent_email: (r.parent_email || '').trim(),
+        parent_relationship: (r.parent_relationship || 'Parent').trim() || 'Parent',
+        student_name: (r.student_name || '').trim(),
+        student_grade: (r.student_grade || '').trim(),
+        student_date_of_birth: (r.student_date_of_birth || '').trim(),
+      }));
+
+      // Seed results
+      for (let i = 0; i < normalized.length; i++) {
+        importResults.push({
           success: false,
           row: i + 1,
-          data: row,
+          data: rows[i],
           parentCreated: false,
           studentCreated: false,
-          relationshipCreated: false
-        };
+          relationshipCreated: false,
+        });
+      }
 
-        try {
-          // Validate required fields
-          if (!row.parent_name || !row.parent_phone_number || !row.student_name || !row.student_grade) {
-            result.error = 'Missing required fields (parent_name, parent_phone_number, student_name, student_grade)';
-            importResults.push(result);
-            continue;
+      // Collect unique keys
+      const parentPhones = Array.from(
+        new Set(
+          normalized
+            .filter(r => r.parent_name && r.parent_phone_number && r.student_name && r.student_grade)
+            .map(r => r.parent_phone_number)
+        )
+      );
+      const studentNames = Array.from(new Set(normalized.map(r => r.student_name).filter(Boolean)));
+      const studentGrades = Array.from(new Set(normalized.map(r => r.student_grade).filter(Boolean)));
+      const studentKey = (n: string, g: string) => `${n}||${g}`;
+
+      // Helper chunker
+      const chunk = <T,>(arr: T[], size = 200): T[][] => {
+        const out: T[][] = [];
+        for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+        return out;
+      };
+
+      // 1) Existing parents map
+      const parentMap = new Map<string, string>(); // phone -> id
+      for (const c of chunk(parentPhones)) {
+        if (c.length === 0) continue;
+        const { data, error } = await supabase
+          .from('parents')
+          .select('id, phone_number')
+          .eq('school_id', schoolId)
+          .in('phone_number', c);
+        if (error) throw error;
+        (data || []).forEach((p: any) => parentMap.set(p.phone_number, p.id));
+      }
+
+      // 2) Insert missing parents in chunks
+      const createdParentPhones = new Set<string>();
+      const missingParents = normalized
+        .filter(r => r.parent_name && r.parent_phone_number && !parentMap.has(r.parent_phone_number))
+        .reduce((acc: any[], r) => {
+          if (!acc.some((x) => x.phone_number === r.parent_phone_number)) {
+            acc.push({
+              parent_name: r.parent_name,
+              phone_number: r.parent_phone_number,
+              email: r.parent_email || null,
+              relationship: r.parent_relationship || 'Parent',
+              school_id: schoolId,
+            });
           }
+          return acc;
+        }, [] as any[]);
+      for (const c of chunk(missingParents)) {
+        if (c.length === 0) continue;
+        const { data, error } = await supabase
+          .from('parents')
+          .insert(c)
+          .select('id, phone_number');
+        if (error) throw error;
+        (data || []).forEach((p: any) => {
+          parentMap.set(p.phone_number, p.id);
+          createdParentPhones.add(p.phone_number);
+        });
+      }
 
-          // Process Parent
-          let parentId: string;
-          const { data: existingParent } = await supabase
-            .from('parents')
-            .select('id')
-            .eq('phone_number', row.parent_phone_number.trim())
-            .single();
+      // 3) Existing students map (name+grade within this school)
+      const studentMap = new Map<string, string>(); // key -> id
+      if (studentNames.length && studentGrades.length) {
+        const { data, error } = await supabase
+          .from('students')
+          .select('id, student_name, grade')
+          .eq('school_id', schoolId)
+          .in('student_name', studentNames)
+          .in('grade', studentGrades);
+        if (error) throw error;
+        (data || []).forEach((s: any) => studentMap.set(studentKey(s.student_name, s.grade), s.id));
+      }
 
-          if (existingParent) {
-            parentId = existingParent.id;
+      // 4) Insert missing students in chunks
+      const createdStudentKeys = new Set<string>();
+      const missingStudents: any[] = [];
+      const seenStudentKey = new Set<string>();
+      normalized.forEach(r => {
+        const key = studentKey(r.student_name, r.student_grade);
+        if (!r.student_name || !r.student_grade) return;
+        if (studentMap.has(key)) return;
+        if (seenStudentKey.has(key)) return;
+        seenStudentKey.add(key);
+        missingStudents.push({
+          student_name: r.student_name,
+          grade: r.student_grade,
+          date_of_birth: r.student_date_of_birth || null,
+          school_id: schoolId,
+        });
+      });
+      for (const c of chunk(missingStudents)) {
+        if (c.length === 0) continue;
+        const { data, error } = await supabase
+          .from('students')
+          .insert(c)
+          .select('id, student_name, grade');
+        if (error) throw error;
+        (data || []).forEach((s: any) => {
+          const key = studentKey(s.student_name, s.grade);
+          studentMap.set(key, s.id);
+          createdStudentKeys.add(key);
+        });
+      }
+
+      // 5) Existing relationships
+      const pairKey = (p: string, s: string) => `${p}|${s}`;
+      const parentIds = Array.from(new Set(normalized
+        .map(r => parentMap.get(r.parent_phone_number))
+        .filter(Boolean) as string[]));
+      const studentIds = Array.from(new Set(normalized
+        .map(r => studentMap.get(studentKey(r.student_name, r.student_grade)))
+        .filter(Boolean) as string[]));
+      const existingPairs = new Set<string>();
+      if (parentIds.length && studentIds.length) {
+        const { data, error } = await supabase
+          .from('parent_student')
+          .select('parent_id, student_id')
+          .eq('school_id', schoolId)
+          .in('parent_id', parentIds)
+          .in('student_id', studentIds);
+        if (error) throw error;
+        (data || []).forEach((ps: any) => existingPairs.add(pairKey(ps.parent_id, ps.student_id)));
+      }
+
+      // 6) Insert missing relationships
+      const createdPairs = new Set<string>();
+      const relInserts: any[] = [];
+      normalized.forEach(r => {
+        const pid = parentMap.get(r.parent_phone_number);
+        const sid = studentMap.get(studentKey(r.student_name, r.student_grade));
+        if (!pid || !sid) return;
+        const k = pairKey(pid, sid);
+        if (existingPairs.has(k)) return;
+        existingPairs.add(k);
+        createdPairs.add(k);
+        relInserts.push({ parent_id: pid, student_id: sid, school_id: schoolId });
+      });
+      for (const c of chunk(relInserts)) {
+        if (c.length === 0) continue;
+        const { error } = await supabase.from('parent_student').insert(c);
+        if (error) throw error;
+      }
+
+      // 7) Build per-row results and progress
+      for (let i = 0; i < normalized.length; i++) {
+        const r = normalized[i];
+        const res = importResults[i];
+        if (!r.parent_name || !r.parent_phone_number || !r.student_name || !r.student_grade) {
+          res.error = 'Missing required fields (parent_name, parent_phone_number, student_name, student_grade)';
+        } else {
+          const pid = parentMap.get(r.parent_phone_number);
+          const skey = studentKey(r.student_name, r.student_grade);
+          const sid = studentMap.get(skey);
+          if (!pid || !sid) {
+            res.error = 'Failed to resolve parent or student ID after insert.';
           } else {
-            const { data: newParent, error: parentError } = await supabase
-              .from('parents')
-              .insert([{
-                parent_name: row.parent_name.trim(),
-                phone_number: row.parent_phone_number.trim(),
-                email: row.parent_email?.trim() || null,
-                relationship: row.parent_relationship?.trim() || 'Parent',
-                school_id: schoolId
-              }])
-              .select('id')
-              .single();
-
-            if (parentError) throw parentError;
-            parentId = newParent.id;
-            result.parentCreated = true;
+            res.parentCreated = createdParentPhones.has(r.parent_phone_number);
+            res.studentCreated = createdStudentKeys.has(skey);
+            res.relationshipCreated = createdPairs.has(pairKey(pid, sid));
+            res.success = true;
           }
-
-          // Process Student
-          let studentId: string;
-          const { data: existingStudent } = await supabase
-            .from('students')
-            .select('id')
-            .eq('student_name', row.student_name.trim())
-            .eq('grade', row.student_grade.trim())
-            .single();
-
-          if (existingStudent) {
-            studentId = existingStudent.id;
-          } else {
-            const { data: newStudent, error: studentError } = await supabase
-              .from('students')
-              .insert([{
-                student_name: row.student_name.trim(),
-                grade: row.student_grade.trim(),
-            date_of_birth: row.student_date_of_birth?.trim() || null,
-            school_id: schoolId
-              }])
-              .select('id')
-              .single();
-
-            if (studentError) throw studentError;
-            studentId = newStudent.id;
-            result.studentCreated = true;
-          }
-
-          // Create Parent-Student Relationship
-          const { data: existingRelation } = await supabase
-            .from('parent_student')
-            .select('id')
-            .eq('parent_id', parentId)
-            .eq('student_id', studentId)
-            .maybeSingle();
-
-          if (!existingRelation) {
-            const { error: relationError } = await supabase
-              .from('parent_student')
-              .insert([{
-                parent_id: parentId,
-           student_id: studentId,
-           school_id: schoolId
-              }]);
-
-            if (relationError) throw relationError;
-            result.relationshipCreated = true;
-          }
-
-          result.success = true;
-        } catch (error: any) {
-          result.error = error.message;
         }
-
-        importResults.push(result);
+        setProcessed(i + 1);
       }
 
       setResults(importResults);
@@ -248,7 +338,6 @@ export const DataImportPage = () => {
   const failedImports = results.filter(r => !r.success).length;
   const parentsCreated = results.filter(r => r.parentCreated).length;
   const studentsCreated = results.filter(r => r.studentCreated).length;
-  const relationshipsCreated = results.filter(r => r.relationshipCreated).length;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-yellow-50">
@@ -361,6 +450,19 @@ export const DataImportPage = () => {
                       )}
                     </button>
                   </div>
+              {loading && (
+                <div className="mt-4">
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full"
+                      style={{ width: total ? `${Math.round((processed / total) * 100)}%` : '0%' }}
+                    />
+                  </div>
+                  <p className="text-sm text-gray-600 mt-2">
+                    Processing {processed} of {total} rows
+                  </p>
+                </div>
+              )}
                 </div>
               )}
             </div>
@@ -416,9 +518,8 @@ export const DataImportPage = () => {
                         <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
                         <div>
                           <p className="font-medium text-gray-900">
-                            Row {result.row}: {result.data.parent_name} → {result.data.student_name}
+                            Row {result.row}: {result.data.parent_name} + {result.data.student_name}
                           </p>
-                          <p className="text-sm text-red-600">{result.error}</p>
                         </div>
                       </div>
                     </div>
@@ -448,3 +549,4 @@ export const DataImportPage = () => {
     </div>
   );
 };
+

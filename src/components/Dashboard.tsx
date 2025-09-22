@@ -13,7 +13,6 @@ import {
   Upload,
   TrendingUp,
   Clock,
-  AlertCircle,
   Shield
 } from 'lucide-react';
 import Papa from 'papaparse';
@@ -30,14 +29,14 @@ export const Dashboard = () => {
 
   useEffect(() => {
     loadStats();
-  }, []);
+  }, [schoolId]);
 
   const loadStats = async () => {
     if (!schoolId) {
       setLoading(false);
       return;
     }
-    
+    setLoading(true);
     try {
       // Get parent count
       const { count: parentCount } = await supabase
@@ -271,7 +270,7 @@ export const Dashboard = () => {
                     </div>
                     <div>
                       <p className="font-medium text-gray-900">
-                        {onboarding.parent?.parent_name} → {onboarding.student?.student_name}
+                        {onboarding.parent?.parent_name} + {onboarding.student?.student_name}
                       </p>
                       <p className="text-sm text-gray-500">
                         Grade: {onboarding.student?.grade} | Phone: {onboarding.parent?.phone_number}
