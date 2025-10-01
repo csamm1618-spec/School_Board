@@ -57,10 +57,19 @@ export const AuthPage = () => {
               throw new Error('Failed to create school.');
             }
 
-            try {
-              await createUserProfile(data.user.id, newSchool.id, newSchool.name, 'owner');
-            } catch (profileError) {
-              console.error('Error creating user profile after school creation:', profileError);
+            // Create user profile and wait for it to complete
+            // This ensures the profile exists before redirecting
+            await createUserProfile(data.user.id, newSchool.id, newSchool.name, 'owner');
+
+            // Verify profile was created by attempting to fetch it
+            const { data: profileData, error: profileError } = await supabase
+              .from('user_profiles')
+              .select('id, school_id')
+              .eq('user_id', data.user.id)
+              .maybeSingle();
+
+            if (profileError || !profileData) {
+              throw new Error('Failed to verify user profile creation. Please try logging in.');
             }
           }
           // Sign up successful, show email confirmation message

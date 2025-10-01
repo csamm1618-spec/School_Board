@@ -5,7 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 import { UserPlus, Users, GraduationCap, Phone, Mail, User, Calendar } from 'lucide-react';
 
 export const OnboardingForm = () => {
-  const { schoolId } = useAuth();
+  const { schoolId, loading: authLoading, refetchUserProfile } = useAuth();
   const [parentData, setParentData] = useState({
     parent_name: '',
     phone_number: '',
@@ -22,18 +22,34 @@ export const OnboardingForm = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [retryingAuth, setRetryingAuth] = useState(false);
 
   const relationships = ['Parent', 'Guardian', 'Other'];
   const grades = ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'JHS1', 'JHS2', 'JHS3'];
 
+  const handleRetryAuth = async () => {
+    setRetryingAuth(true);
+    setError('');
+    try {
+      await refetchUserProfile();
+      if (!schoolId) {
+        setError('Still unable to load school information. Please contact support.');
+      }
+    } catch (err) {
+      setError('Failed to reload profile. Please try logging out and back in.');
+    } finally {
+      setRetryingAuth(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!schoolId) {
-      setError('School information not available. Please try logging in again.');
+      setError('School information not available. Please wait a moment and try again, or click "Retry" below.');
       return;
     }
-    
+
     setLoading(true);
     setError('');
 
@@ -128,6 +144,62 @@ export const OnboardingForm = () => {
                 className="bg-gray-100 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 Go to Dashboard
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-yellow-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!schoolId && !authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-yellow-50 flex items-center justify-center">
+        <div className="max-w-md mx-auto px-4">
+          <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+            <div className="bg-yellow-100 p-4 rounded-full w-16 h-16 mx-auto mb-6">
+              <UserPlus className="h-8 w-8 text-yellow-600 mx-auto" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">School Information Missing</h2>
+            <p className="text-gray-600 mb-6">
+              We're having trouble loading your school information. This might be a temporary issue.
+            </p>
+            {error && (
+              <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+            <div className="space-y-3">
+              <button
+                onClick={handleRetryAuth}
+                disabled={retryingAuth}
+                className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+              >
+                {retryingAuth ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    <span>Retrying...</span>
+                  </>
+                ) : (
+                  <span>Retry Loading Profile</span>
+                )}
+              </button>
+              <Link
+                to="/dashboard"
+                className="block w-full bg-gray-100 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Back to Dashboard
               </Link>
             </div>
           </div>

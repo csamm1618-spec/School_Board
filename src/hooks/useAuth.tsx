@@ -101,7 +101,7 @@ const useProvideAuth = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-    const loadUserProfile = async (userId: string) => {
+    const loadUserProfile = async (userId: string, retryCount = 0) => {
       if (!isSupabaseConfigured) {
         debugError('Supabase not configured. Skipping profile load.');
         setUserProfile(null);
@@ -109,16 +109,18 @@ const useProvideAuth = () => {
       }
     const abortController = new AbortController();
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY = 2000; // 2 seconds between retries
 
     try {
-      debugLog('Loading profile for user:', userId);
-      
+      debugLog('Loading profile for user:', userId, 'Attempt:', retryCount + 1);
+
       // Set up timeout with AbortController for proper cancellation
       timeoutId = setTimeout(() => {
         debugError('Profile loading timed out after 10 seconds');
         abortController.abort();
-      }, 10000); // Increased timeout to 10 seconds
-      
+      }, 10000);
+
       const profile = await getUserSchoolInfo(userId, abortController.signal);
       debugLog('Profile loaded:', profile ? 'Found' : 'None');
 
@@ -128,9 +130,13 @@ const useProvideAuth = () => {
         timeoutId = null;
       }
 
-      // If no profile exists yet, create one
-      // The AuthPage now handles school creation and user profile linking during signup.
-      // If a profile is missing here, it indicates an issue or a user signed up externally.
+      // If no profile exists yet, retry a few times
+      // This handles cases where profile creation is still in progress
+      if (!profile && retryCount < MAX_RETRIES) {
+        debugLog(`Profile not found, retrying in ${RETRY_DELAY}ms (${retryCount + 1}/${MAX_RETRIES})`);
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+        return loadUserProfile(userId, retryCount + 1);
+      }
 
       // Type-safe profile validation and role assignment
       if (profile) {
@@ -140,16 +146,23 @@ const useProvideAuth = () => {
         }
         setUserProfile(profile);
       } else {
-        // Handle null profile explicitly
+        // After all retries, if still no profile, set to null
+        debugError('Profile not found after all retries');
         setUserProfile(null);
       }
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         debugError('Profile loading timed out');
+        // Retry on timeout if we haven't exceeded max retries
+        if (retryCount < MAX_RETRIES) {
+          debugLog(`Timeout occurred, retrying (${retryCount + 1}/${MAX_RETRIES})`);
+          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+          return loadUserProfile(userId, retryCount + 1);
+        }
       } else {
         debugError('Error loading user profile:', error);
       }
-      
+
       // Don't set a default profile with empty school_id - let it be null
       // This will properly trigger the "School Information Missing" message
       setUserProfile(null);
